@@ -14,7 +14,7 @@ export interface AppProps {
 
 export default function App(props: AppProps) {
     const data = useDataContext()
-    const refPainter = React.useRef(new painter())
+    const refPainter = React.useRef(new painter(data))
     React.useEffect(() => {
         const img = new Image()
         img.src = ImageURL

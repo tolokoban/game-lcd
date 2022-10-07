@@ -1,5 +1,6 @@
+import Data from "@/data/data"
 import Polygon from "./polygon"
-import { debounce } from "../../tool/async"
+import { debounce } from "@/tool/async"
 import { Point, PolygonItem } from "@/data/types"
 import { PointerWatcherEvent } from "@/tool/pointer-watcher"
 import { Triangle } from "@/tool/triangulate"
@@ -23,7 +24,7 @@ export default class Painter {
     private selectedPoint = -1
     private xRayMode = false
 
-    constructor() {
+    constructor(private data: Data) {
         this._canvas = document.createElement("canvas")
         this.observer = new ResizeObserver(this.handleResize)
         this.watcher = new PointerWatcher({
@@ -199,22 +200,34 @@ export default class Painter {
     }
 
     private paintDefault(ctx: CanvasRenderingContext2D) {
-        const { image, polygon } = this
+        const { data, image, polygon } = this
         ctx.save()
+        ctx.globalAlpha = 0.5
         ctx.drawImage(image, 0, 0)
-        ctx.fillStyle = "#0f03"
-        for (const [a, b, c] of this.triangles) {
-            ctx.beginPath()
-            const A = polygon.getPoint(a)
-            const B = polygon.getPoint(b)
-            const C = polygon.getPoint(c)
-            ctx.moveTo(A.x, A.y)
-            ctx.lineTo(B.x, B.y)
-            ctx.lineTo(C.x, C.y)
-            ctx.closePath()
-            ctx.fill()
+        ctx.globalAlpha = 1
+        ctx.save()
+        ctx.beginPath()
+        for (const poly of data.getPolygonList()) {
+            const [{ x, y }, ...nextPoints] = poly.points
+            ctx.moveTo(x, y)
+            for (const { x, y } of nextPoints) ctx.lineTo(x, y)
+            ctx.lineTo(x, y)
         }
+        ctx.clip()
+        ctx.drawImage(image, 0, 0)
         ctx.restore()
+        // ctx.fillStyle = "#0f03"
+        // for (const [a, b, c] of this.triangles) {
+        //     ctx.beginPath()
+        //     const A = polygon.getPoint(a)
+        //     const B = polygon.getPoint(b)
+        //     const C = polygon.getPoint(c)
+        //     ctx.moveTo(A.x, A.y)
+        //     ctx.lineTo(B.x, B.y)
+        //     ctx.lineTo(C.x, C.y)
+        //     ctx.closePath()
+        //     ctx.fill()
+        // }
         ctx.strokeStyle = "#000"
         ctx.lineWidth = 3
         ctx.beginPath()
