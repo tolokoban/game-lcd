@@ -1,0 +1,38 @@
+.view-PolygonButtonView {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin: .5em;
+}
+
+.view-PolygonButtonView.selected {
+    background-color: var(--theme-color-section);
+    color: var(--theme-color-on-section);
+    box-shadow: 0 .25em .5em #0009;
+}
+
+.view-PolygonButtonView > div {
+    flex: 1 1 auto;
+    line-height: 2em;
+    padding: 0 .5em;
+    background-color: transparent;
+    color: var(--theme-color-on-frame);
+}
+
+.view-PolygonButtonView > div.label:hover {
+    background-color: var(--theme-color-primary);
+    color: var(--theme-color-on-primary);
+    box-shadow: 0 .125em .25em #0009;
+    cursor: pointer;
+}
+
+.view-PolygonButtonView input {
+    border: none;
+    color: var(--theme-color-on-input);
+    background: var(--theme-color-input);
+    height: 2em;
+    padding: 0 .5em;
+    margin: .5em;
+    width: 100%;
+}
