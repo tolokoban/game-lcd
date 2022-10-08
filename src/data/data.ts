@@ -60,7 +60,6 @@ export default class Data {
         )
         if (!poly) return
 
-        console.log(`Try to update #${poly.id}`)
         let updated = false
         if (points) {
             poly.points = points.map((p) => ({ ...p }))
@@ -142,12 +141,6 @@ export default class Data {
     }
 
     readonly save = debounce(() => {
-        // console.log("Saving...")
-        // console.log(
-        //     this.polygonList
-        //         .map((p) => `#${p.id} - ${p.name}  (${p.points.length})`)
-        //         .join("\n")
-        // )
         savePolygonItems(this.storage, this.polygonList)
     }, DEBOUNCE_SAVE_DELAY)
 

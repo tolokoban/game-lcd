@@ -38,6 +38,7 @@ export default function App(props: AppProps) {
     const handleExportCode = () => {
         const code = generateCode(data, refPainter.current.image)
         console.log(code)
+        navigator.clipboard.writeText(code)
     }
     return (
         <div className={getClassNames(props)}>

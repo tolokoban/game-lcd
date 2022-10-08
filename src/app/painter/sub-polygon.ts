@@ -1,5 +1,5 @@
 import Polygon from "@/app/painter/polygon"
-import { Point } from "../../data/types"
+import { Point } from "@/data/types"
 import { sameSign, subtractPoints, vectorProduct } from "../../tool/calc"
 
 export default class SubPolygon {
@@ -16,8 +16,6 @@ export default class SubPolygon {
 
     removePoint(index: number): SubPolygon {
         const subElements = this.elements.filter((_elem, idx) => idx !== index)
-        console.log("🚀 [sub-polygon] this.elements = ", this.elements) // @FIXME: Remove this line written on 2022-10-07 at 15:11
-        console.log("🚀 [sub-polygon] subElements = ", subElements) // @FIXME: Remove this line written on 2022-10-07 at 15:11
         return new SubPolygon(this.polygon, subElements)
     }
 

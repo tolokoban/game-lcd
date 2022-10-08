@@ -49,13 +49,6 @@ function recursiveTriangulation(
             elements[(bestIndex + 1) % elements.length],
             elements[(bestIndex + elements.length - 1) % elements.length],
         ])
-        console.log(
-            elements.join(","),
-            "->",
-            bestIndexes.map((k) => elements[k]).join(","),
-            "->",
-            elements[bestIndex]
-        )
         elements.splice(bestIndex, 1)
     }
     triangles.push(elements as Triangle)

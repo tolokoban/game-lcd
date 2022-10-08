@@ -81,7 +81,6 @@ export default class Polygon {
             const dX = point.x - p.x
             const dY = point.y - p.y
             const d2 = dX * dX + dY * dY
-            console.log(p, d2)
             return d2 < 10 * 10
         })
         return index
@@ -130,7 +129,6 @@ export default class Polygon {
         for (let loop = 0; loop < this.length; loop++) {
             if (subPoly.length < 4) break
             subPoly = removeOneEar(subPoly, triangles)
-            console.log("🚀 [polygon] subPoly = ", subPoly.length) // @FIXME: Remove this line written on 2022-10-07 at 15:04
         }
         if (subPoly.length === 3) {
             triangles.push([
@@ -139,7 +137,6 @@ export default class Polygon {
                 subPoly.getElementIndex(2),
             ])
         }
-        console.log(JSON.stringify(triangles))
         return triangles
     }
 

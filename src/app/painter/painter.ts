@@ -96,9 +96,6 @@ export default class Painter {
         const y = evt.y / this.scale
         if (evt.button === "left") {
             if (this.addDot({ x, y })) evt.cancel()
-            else {
-                console.log("Dragging:", this.selectedPoint)
-            }
         } else if (evt.button === "right") {
             evt.cancel()
             this.removeDot(x, y)
@@ -131,7 +128,6 @@ export default class Painter {
         let bestDistance = Number.MAX_SAFE_INTEGER
         for (let idx = 0; idx < polygon.length; idx++) {
             const distance = polygon.distFromEdge(point, idx, idx + 1)
-            console.log(`[${idx}, ${idx + 1}]`, distance)
             if (distance < bestDistance) {
                 bestDistance = distance
                 bestIndex = idx + 1
@@ -228,25 +224,27 @@ export default class Painter {
         //     ctx.closePath()
         //     ctx.fill()
         // }
-        ctx.strokeStyle = "#000"
-        ctx.lineWidth = 3
-        ctx.beginPath()
-        const [{ x, y }, ...nextPoints] = polygon.points
-        ctx.moveTo(x, y)
-        for (const { x, y } of nextPoints) ctx.lineTo(x, y)
-        ctx.closePath()
-        ctx.stroke()
-        ctx.font = `bold ${Math.ceil(DOT_RADIUS * 1.5)}px sans-serif`
-        ctx.textBaseline = "middle"
-        ctx.textAlign = "center"
-        let index = 0
-        for (const { x, y } of polygon.points) {
-            ctx.fillStyle = "#000"
+        if (polygon.points.length > 0) {
+            ctx.strokeStyle = "#000"
+            ctx.lineWidth = 3
             ctx.beginPath()
-            ctx.ellipse(x, y, DOT_RADIUS, DOT_RADIUS, 0, 0, Math.PI * 2)
-            ctx.fill()
-            ctx.fillStyle = "#fff"
-            ctx.fillText(`${index++}`, x, y)
+            const [{ x, y }, ...nextPoints] = polygon.points
+            ctx.moveTo(x, y)
+            for (const { x, y } of nextPoints) ctx.lineTo(x, y)
+            ctx.closePath()
+            ctx.stroke()
+            ctx.font = `bold ${Math.ceil(DOT_RADIUS * 1.5)}px sans-serif`
+            ctx.textBaseline = "middle"
+            ctx.textAlign = "center"
+            let index = 0
+            for (const { x, y } of polygon.points) {
+                ctx.fillStyle = "#000"
+                ctx.beginPath()
+                ctx.ellipse(x, y, DOT_RADIUS, DOT_RADIUS, 0, 0, Math.PI * 2)
+                ctx.fill()
+                ctx.fillStyle = "#fff"
+                ctx.fillText(`${index++}`, x, y)
+            }
         }
         ctx.restore()
     }
