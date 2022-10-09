@@ -12,7 +12,6 @@ export function generateCode(
     const items = data.getPolygonList()
     const triangles = getTriangles(data)
     return linearize([
-        "// prettier-ignore",
         `export default class ${className} {`,
         [
             ...generateCodeStatisIds(data),
@@ -23,6 +22,9 @@ export function generateCode(
             "private readonly backBuff: WebGLBuffer",
             "private readonly drawBuff: WebGLBuffer",
             "private readonly elemBuff: WebGLBuffer",
+            "private readonly uniAspectRatioContain: WebGLUniformLocation",
+            "private readonly uniTexture: WebGLUniformLocation",
+            "private readonly vao: WebGLVertexArrayObject",
             `private readonly offsets = [${getOffsets(triangles)}]`,
             `private readonly sizes = ${JSON.stringify(
                 triangles.map((tri) => tri.length)
@@ -40,20 +42,18 @@ export function generateCode(
                 "const ratio = ensureSameAspectRatio(background, foreground)",
                 "const x = ratio > 1 ? 1 : 1 / ratio",
                 "const y = ratio > 1 ? ratio : 1",
+                "// prettier-ignore",
                 "this.backBuff = this.createDrawBuffer([",
-                [
-                    "-x, +y, -1, +1,",
-                    "-x, -y, -1, -1,",
-                    "+x, -y, +1, -1,",
-                    "+x, +y, +1, +1",
-                ],
+                ["-1, +1,", "-1, -1,", "+1, -1,", "+1, +1"],
                 "])",
+                "// prettier-ignore",
                 "this.elemBuff = this.createElemBuffer([",
                 triangles.map(
                     (section, index) =>
                         `${section.join(", ")},  // ${items[index].name}`
                 ),
                 "])",
+                "// prettier-ignore",
                 "this.drawBuff = this.createDrawBuffer([",
                 items.map(
                     (item, index) =>
@@ -70,6 +70,9 @@ export function generateCode(
                 "this.texBackground = this.createTexture(background)",
                 "this.texForeground = this.createTexture(foreground)",
                 "this.prg = createProgram(gl)",
+                "this.vao = this.createVAO()",
+                'this.uniTexture = this.getUniformLocation("uniTexture")',
+                'this.uniAspectRatioContain = this.getUniformLocation("uniAspectRatioContain")',
             ],
             "}",
             "",
@@ -105,27 +108,35 @@ export function generateCode(
             ],
             "}",
             "",
-            "draw(index: number) {",
+            "draw() {",
             [
-                "const { gl, prg } = this",
-                "const w = gl.drawingBufferWidth",
-                "const h = gl.drawingBufferHeight",
+                "const { gl, prg, vao } = this",
+                "const w = gl.canvas.clientWidth",
+                "const h = gl.canvas.clientHeight",
                 "const { canvas } = gl",
                 "if (canvas.width !== w || canvas.height !== h) {",
                 ["canvas.width = w", "canvas.height = h"],
                 "}",
                 "gl.viewport(0, 0, w, h)",
-                "gl.bindBuffer( gl.ARRAY_BUFFER, this.drawBuff )",
-                "gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.elemBuff )",
+                "gl.clearColor(0.733, 0.710, 0.655, 1)",
+                "gl.clear(gl.COLOR_BUFFER_BIT)",
+                "gl.disable(gl.DEPTH_TEST)",
+                "gl.useProgram(prg)",
+                "gl.uniform2f(this.uniAspectRatioContain, h / w, 1)",
+                "gl.activeTexture(gl.TEXTURE0)",
+                "gl.bindTexture(gl.TEXTURE_2D, this.texForeground)",
+                "gl.uniform1i(this.uniTexture, 1)",
+                "gl.bindVertexArray(vao)",
                 "for (let index = 0; index < this.sprites.length; index++) {",
                 [
                     "if (this.sprites[index] === 0) continue",
                     "",
                     "const offset = this.offsets[index]",
                     "const size = this.sizes[index]",
-                    "gl.drawElements( gl.TRIANGLES, size, gl.UNSIGNED_SHORT, offset )",
+                    "gl.drawElements(gl.TRIANGLES, size, gl.UNSIGNED_SHORT, offset)",
                 ],
                 "}",
+                "gl.bindVertexArray(null)",
             ],
             "}",
             "",
@@ -165,7 +176,7 @@ export function generateCode(
             ],
             "}",
             "",
-            "createTexture(img: HTMLImageElement): WebGLTexture {",
+            "private createTexture(img: HTMLImageElement): WebGLTexture {",
             [
                 "const { gl } = this",
                 "const tex = gl.createTexture()",
@@ -181,6 +192,33 @@ export function generateCode(
                 ],
                 ")",
                 "return tex",
+            ],
+            "}",
+            "",
+            "private createVAO() {",
+            [
+                "const { gl, prg } = this",
+                "const vao = gl.createVertexArray()",
+                'if (!vao) throw Error("Unable to create a WebGLVertexArrayObject!")',
+                "",
+                "gl.bindVertexArray(vao)",
+                "gl.bindBuffer(gl.ARRAY_BUFFER, this.drawBuff)",
+                "gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.elemBuff)",
+                'const attUV = gl.getAttribLocation(prg, "attUV")',
+                "gl.enableVertexAttribArray(attUV)",
+                "gl.vertexAttribPointer(attUV, 2, gl.FLOAT, false, 8, 0)",
+                "gl.bindVertexArray(null)",
+                "return vao",
+            ],
+            "}",
+            "",
+            "private getUniformLocation(name: string) {",
+            [
+                "const { gl, prg } = this",
+                "const loc = gl.getUniformLocation(prg, name)",
+                'if (!loc) throw Error(`Unable to get uniform location for "${name}"!`)',
+                "",
+                "return loc",
             ],
             "}",
         ],
@@ -252,7 +290,7 @@ function getOffsets(triangles: number[][]) {
     return triangles.map((section) => {
         const value = offset
         offset += section.length
-        return value
+        return value * Uint16Array.BYTES_PER_ELEMENT
     })
 }
 

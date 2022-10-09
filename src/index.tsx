@@ -3,6 +3,7 @@ import App from "./app"
 import Data from "./data/data"
 import DataContext from "./data/provider"
 import { createRoot } from "react-dom/client"
+import { Game } from "./game/game"
 import "./index.css"
 
 async function start() {
@@ -12,9 +13,15 @@ async function start() {
     const root = createRoot(container)
     root.render(
         <DataContext.Provider value={Data.getSingleton()}>
-            <App />
+            <Main />
         </DataContext.Provider>
     )
+}
+
+function Main() {
+    console.log("🚀 [index] window.location.hash = ", window.location.hash) // @FIXME: Remove this line written on 2022-10-09 at 13:03
+    if (window.location.hash === "#edit") return <App />
+    return <Game />
 }
 
 void start()

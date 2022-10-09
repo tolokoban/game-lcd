@@ -1,20 +1,22 @@
-// prettier-ignore
 export default class Painter {
     static POLYGON_1 = 0
     static POLYGON_2 = 1
     static POLYGON_3 = 2
     static POLYGON_4 = 3
-    
+
     private readonly prg: WebGLProgram
     private readonly texBackground: WebGLTexture
     private readonly texForeground: WebGLTexture
     private readonly backBuff: WebGLBuffer
     private readonly drawBuff: WebGLBuffer
     private readonly elemBuff: WebGLBuffer
-    private readonly offsets = [0,6,12,24]
-    private readonly sizes = [6,6,12,15]
+    private readonly uniAspectRatioContain: WebGLUniformLocation
+    private readonly uniTexture: WebGLUniformLocation
+    private readonly vao: WebGLVertexArrayObject
+    private readonly offsets = [0, 12, 24, 48]
+    private readonly sizes = [6, 6, 12, 15]
     private readonly sprites = new Uint8Array(4)
-    
+
     constructor(
         private readonly gl: WebGL2RenderingContext,
         background: HTMLImageElement,
@@ -23,18 +25,16 @@ export default class Painter {
         const ratio = ensureSameAspectRatio(background, foreground)
         const x = ratio > 1 ? 1 : 1 / ratio
         const y = ratio > 1 ? ratio : 1
-        this.backBuff = this.createDrawBuffer([
-            -x, +y, -1, +1,
-            -x, -y, -1, -1,
-            +x, -y, +1, -1,
-            +x, +y, +1, +1
-        ])
+        // prettier-ignore
+        this.backBuff = this.createDrawBuffer([-1, +1, -1, -1, +1, -1, +1, +1])
+        // prettier-ignore
         this.elemBuff = this.createElemBuffer([
             3, 0, 1, 1, 2, 3,  // Polygon_1
             7, 4, 5, 5, 6, 7,  // Polygon_2
             13, 8, 9, 13, 9, 10, 13, 10, 11, 11, 12, 13,  // Polygon_3
             20, 14, 15, 20, 15, 16, 20, 16, 17, 20, 17, 18, 18, 19, 20,  // Polygon_4
         ])
+        // prettier-ignore
         this.drawBuff = this.createDrawBuffer([
             0.27781,0.34058, 0.39351,0.49586, 0.49912,0.54762, 0.49845,0.33954,  // Polygon_1
             0.71976,0.33954, 0.58590,0.50414, 0.49912,0.54762, 0.49778,0.34161,  // Polygon_2
@@ -44,73 +44,82 @@ export default class Painter {
         this.texBackground = this.createTexture(background)
         this.texForeground = this.createTexture(foreground)
         this.prg = createProgram(gl)
+        this.vao = this.createVAO()
+        this.uniTexture = this.getUniformLocation("uniTexture")
+        this.uniAspectRatioContain = this.getUniformLocation(
+            "uniAspectRatioContain"
+        )
     }
-    
+
     on(...spriteIndexes: number[]) {
         for (const index of spriteIndexes) {
             this.sprites[index] = 1
         }
     }
-    
+
     off(...spriteIndexes: number[]) {
         for (const index of spriteIndexes) {
             this.sprites[index] = 0
         }
     }
-    
+
     onAll() {
         for (let index = 0; index < this.sprites.length; index++) {
             this.sprites[index] = 1
         }
     }
-    
+
     offAll() {
         for (let index = 0; index < this.sprites.length; index++) {
             this.sprites[index] = 0
         }
     }
-    
-    draw(index: number) {
-        const { gl, prg } = this
-        const w = gl.drawingBufferWidth
-        const h = gl.drawingBufferHeight
+
+    draw() {
+        const { gl, prg, vao } = this
+        const w = gl.canvas.clientWidth
+        const h = gl.canvas.clientHeight
         const { canvas } = gl
         if (canvas.width !== w || canvas.height !== h) {
             canvas.width = w
             canvas.height = h
         }
         gl.viewport(0, 0, w, h)
-        gl.bindBuffer( gl.ARRAY_BUFFER, this.drawBuff )
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.elemBuff )
+        gl.clearColor(0.733, 0.71, 0.655, 1)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+        gl.disable(gl.DEPTH_TEST)
+        gl.useProgram(prg)
+        gl.uniform2f(this.uniAspectRatioContain, h / w, 1)
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, this.texForeground)
+        gl.uniform1i(this.uniTexture, 1)
+        gl.bindVertexArray(vao)
         for (let index = 0; index < this.sprites.length; index++) {
             if (this.sprites[index] === 0) continue
-            
+
             const offset = this.offsets[index]
             const size = this.sizes[index]
-            gl.drawElements( gl.TRIANGLES, size, gl.UNSIGNED_SHORT, offset )
+            gl.drawElements(gl.TRIANGLES, size, gl.UNSIGNED_SHORT, offset)
         }
+        gl.bindVertexArray(null)
     }
-    
+
     private createDrawBuffer(data: number[]): WebGLBuffer {
         const { gl } = this
         const buff = gl.createBuffer()
         if (!buff) throw Error("Unable to create a WebGLBuffer!")
-        
-        gl.bindBuffer( gl.ARRAY_BUFFER, buff )
-        gl.bufferData(
-            gl.ARRAY_BUFFER,
-            new Float32Array(data),
-            gl.STATIC_DRAW
-        )
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buff)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
         return buff
     }
-    
+
     private createElemBuffer(data: number[]): WebGLBuffer {
         const { gl } = this
         const buff = gl.createBuffer()
         if (!buff) throw Error("Unable to create a WebGLBuffer!")
-        
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, buff )
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buff)
         gl.bufferData(
             gl.ELEMENT_ARRAY_BUFFER,
             new Uint16Array(data),
@@ -118,20 +127,39 @@ export default class Painter {
         )
         return buff
     }
-    
-    createTexture(img: HTMLImageElement): WebGLTexture {
+
+    private createTexture(img: HTMLImageElement): WebGLTexture {
         const { gl } = this
         const tex = gl.createTexture()
         if (!tex) throw Error("Enable to create a WebGLTexture!")
-        
+
         gl.bindTexture(gl.TEXTURE_2D, tex)
-        gl.texImage2D(
-            gl.TEXTURE_2D, 0,
-            gl.RGBA, gl.RGBA,
-            gl.UNSIGNED_BYTE,
-            img
-        )
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+        console.log("🚀 [painter] img = ", img) // @FIXME: Remove this line written on 2022-10-09 at 17:24
         return tex
+    }
+
+    private createVAO() {
+        const { gl, prg } = this
+        const vao = gl.createVertexArray()
+        if (!vao) throw Error("Unable to create a WebGLVertexArrayObject!")
+
+        gl.bindVertexArray(vao)
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.drawBuff)
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.elemBuff)
+        const attUV = gl.getAttribLocation(prg, "attUV")
+        gl.enableVertexAttribArray(attUV)
+        gl.vertexAttribPointer(attUV, 2, gl.FLOAT, false, 8, 0)
+        gl.bindVertexArray(null)
+        return vao
+    }
+
+    private getUniformLocation(name: string) {
+        const { gl, prg } = this
+        const loc = gl.getUniformLocation(prg, name)
+        if (!loc) throw Error(`Unable to get uniform location for "${name}"!`)
+
+        return loc
     }
 }
 
@@ -174,14 +202,13 @@ function createProgram(gl: WebGL2RenderingContext) {
 const VERT = `#version 300 es
 
 uniform vec2 uniAspectRatioContain;
-uniform float uniZ;
-in vec2 attPoint;
 in vec2 attUV;
 out vec2 varUV;
 
 void main() {
     varUV = attUV;
-    gl_Position = vec4(attPoint * uniAspectRatioContain, uniZ, 1.0);
+    vec2 point = vec2(2.0 * attUV.x - 1.0, 1.0 - 2.0 * attUV.y);
+    gl_Position = vec4(point * uniAspectRatioContain, 0.5, 1.0);
 }`
 const FRAG = `#version 300 es
 
