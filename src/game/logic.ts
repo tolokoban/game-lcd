@@ -41,6 +41,7 @@ export default class Logic {
 
     constructor(private readonly painter: Painter) {
         document.addEventListener("keydown", this.handleKeyDown, true)
+        document.addEventListener("pointerdown", this.handlePointerDown, true)
     }
 
     play(time: number) {
@@ -62,15 +63,31 @@ export default class Logic {
         this.painter.on(this.mortysBottom[tick % this.mortysBottom.length])
     }
 
+    private moveRickRight() {
+        this.rickIndex = (this.rickIndex + 1) % this.ricks.length
+    }
+
+    private moveRickLeft() {
+        this.rickIndex =
+            (this.rickIndex - 1 + this.ricks.length) % this.ricks.length
+    }
+
     private readonly handleKeyDown = (evt: KeyboardEvent) => {
         switch (evt.key) {
             case "ArrowRight":
-                this.rickIndex = (this.rickIndex + 1) % this.ricks.length
+                this.moveRickRight()
                 break
             case "ArrowLeft":
-                this.rickIndex =
-                    (this.rickIndex - 1 + this.ricks.length) % this.ricks.length
+                this.moveRickLeft()
                 break
         }
+    }
+
+    private readonly handlePointerDown = (evt: PointerEvent) => {
+        const { width, height } = window.document.body.getBoundingClientRect()
+        if (evt.clientY < height / 2) return
+
+        if (evt.clientX < width / 2) this.moveRickLeft()
+        else this.moveRickRight()
     }
 }
