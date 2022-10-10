@@ -1,8 +1,8 @@
-import Data from "@/data/data"
+import Data from "@/editor/data/data"
 import FRAG from "./shader.frag"
-import Polygon from "@/app/painter/polygon"
+import Polygon from "@/editor/app/painter/polygon"
 import VERT from "./shader.vert"
-import { loadPolygonItems } from "@/data/storage"
+import { loadPolygonItems } from "@/editor/data/storage"
 
 export function generateCode(
     data: Data,
@@ -24,7 +24,8 @@ export function generateCode(
             "private readonly elemBuff: WebGLBuffer",
             "private readonly uniAspectRatioContain: WebGLUniformLocation",
             "private readonly uniTexture: WebGLUniformLocation",
-            "private readonly vao: WebGLVertexArrayObject",
+            "private readonly vaoBackground: WebGLVertexArrayObject",
+            "private readonly vaoForeground: WebGLVertexArrayObject",
             `private readonly offsets = [${getOffsets(triangles)}]`,
             `private readonly sizes = ${JSON.stringify(
                 triangles.map((tri) => tri.length)
@@ -70,7 +71,8 @@ export function generateCode(
                 "this.texBackground = this.createTexture(background)",
                 "this.texForeground = this.createTexture(foreground)",
                 "this.prg = createProgram(gl)",
-                "this.vao = this.createVAO()",
+                "this.vaoBackground = this.createBackgroundVAO()",
+                "this.vaoForeground = this.createForegroundVAO()",
                 'this.uniTexture = this.getUniformLocation("uniTexture")',
                 'this.uniAspectRatioContain = this.getUniformLocation("uniAspectRatioContain")',
             ],
@@ -110,7 +112,7 @@ export function generateCode(
             "",
             "draw() {",
             [
-                "const { gl, prg, vao } = this",
+                "const { gl, prg, vaoBackground, vaoForeground } = this",
                 "const w = gl.canvas.clientWidth",
                 "const h = gl.canvas.clientHeight",
                 "const { canvas } = gl",
@@ -121,12 +123,31 @@ export function generateCode(
                 "gl.clearColor(0.733, 0.710, 0.655, 1)",
                 "gl.clear(gl.COLOR_BUFFER_BIT)",
                 "gl.disable(gl.DEPTH_TEST)",
+                "gl.disable(gl.BLEND)",
+                "gl.useProgram(prg)",
+                "gl.uniform2f(this.uniAspectRatioContain, h / w, 1)",
+                "gl.activeTexture(gl.TEXTURE0)",
+                "gl.bindTexture(gl.TEXTURE_2D, this.texBackground)",
+                "gl.uniform1i(this.uniTexture, 0)",
+                "gl.bindVertexArray(vaoBackground)",
+                "gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)",
+                "gl.bindVertexArray(null)",
+                "gl.enable(gl.BLEND)",
+                "gl.blendEquation(gl.FUNC_ADD)",
+                "gl.blendFuncSeparate(",
+                [
+                    "gl.SRC_ALPHA,",
+                    "gl.ONE_MINUS_SRC_ALPHA,",
+                    "gl.ZERO,",
+                    "gl.ONE",
+                ],
+                ")",
                 "gl.useProgram(prg)",
                 "gl.uniform2f(this.uniAspectRatioContain, h / w, 1)",
                 "gl.activeTexture(gl.TEXTURE0)",
                 "gl.bindTexture(gl.TEXTURE_2D, this.texForeground)",
-                "gl.uniform1i(this.uniTexture, 1)",
-                "gl.bindVertexArray(vao)",
+                "gl.uniform1i(this.uniTexture, 0)",
+                "gl.bindVertexArray(vaoForeground)",
                 "for (let index = 0; index < this.sprites.length; index++) {",
                 [
                     "if (this.sprites[index] === 0) continue",
@@ -183,6 +204,8 @@ export function generateCode(
                 `if (!tex) throw Error("Enable to create a WebGLTexture!")`,
                 "",
                 "gl.bindTexture(gl.TEXTURE_2D, tex)",
+                "gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)",
+                "gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)",
                 "gl.texImage2D(",
                 [
                     "gl.TEXTURE_2D, 0,",
@@ -195,7 +218,7 @@ export function generateCode(
             ],
             "}",
             "",
-            "private createVAO() {",
+            "private createForegroundVAO() {",
             [
                 "const { gl, prg } = this",
                 "const vao = gl.createVertexArray()",
@@ -204,6 +227,22 @@ export function generateCode(
                 "gl.bindVertexArray(vao)",
                 "gl.bindBuffer(gl.ARRAY_BUFFER, this.drawBuff)",
                 "gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.elemBuff)",
+                'const attUV = gl.getAttribLocation(prg, "attUV")',
+                "gl.enableVertexAttribArray(attUV)",
+                "gl.vertexAttribPointer(attUV, 2, gl.FLOAT, false, 8, 0)",
+                "gl.bindVertexArray(null)",
+                "return vao",
+            ],
+            "}",
+            "",
+            "private createBackgroundVAO() {",
+            [
+                "const { gl, prg } = this",
+                "const vao = gl.createVertexArray()",
+                'if (!vao) throw Error("Unable to create a WebGLVertexArrayObject!")',
+                "",
+                "gl.bindVertexArray(vao)",
+                "gl.bindBuffer(gl.ARRAY_BUFFER, this.backBuff)",
                 'const attUV = gl.getAttribLocation(prg, "attUV")',
                 "gl.enableVertexAttribArray(attUV)",
                 "gl.vertexAttribPointer(attUV, 2, gl.FLOAT, false, 8, 0)",

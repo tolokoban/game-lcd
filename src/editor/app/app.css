@@ -28,4 +28,5 @@
     width: 320px;
     background-color: var(--theme-color-frame);
     color: var(--theme-color-on-frame);
+    overflow: auto;
 }

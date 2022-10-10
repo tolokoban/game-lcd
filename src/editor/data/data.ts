@@ -77,16 +77,56 @@ export default class Data {
         this.save()
     }
 
-    addPolygonToList(): PolygonItem {
-        const id = this.getFirstFreeId()
-        let name = `Polygon_${id}`
-        if (this.findPolygonByName(name)) name = this.makeNewPolygonName()
+    moveCurrentDown() {
+        const polygons = this.polygonList
+        const index = polygons.findIndex((p) => p.id === this.currentPolygonId)
+        if (index < 0) return
+
+        const current = this.getCurrentPolygon()
+        if (index === polygons.length - 1) {
+            polygons.pop()
+            polygons.unshift(current)
+            this.firePolygonListChanged()
+            return
+        }
+
+        polygons[index] = polygons[index + 1]
+        polygons[index + 1] = current
+        this.firePolygonListChanged()
+    }
+
+    moveCurrentUp() {
+        const polygons = this.polygonList
+        const index = polygons.findIndex((p) => p.id === this.currentPolygonId)
+        if (index < 0) return
+
+        const current = this.getCurrentPolygon()
+        if (index === 0) {
+            polygons.shift()
+            polygons.push(current)
+            this.firePolygonListChanged()
+            return
+        }
+
+        polygons[index] = polygons[index - 1]
+        polygons[index - 1] = current
+        this.firePolygonListChanged()
+    }
+
+    duplicateCurrentPolygon(): PolygonItem {
+        const current = this.getCurrentPolygon()
+        const id = this.getFreeId()
+        let name = this.makeNewPolygonName()
         const poly: PolygonItem = {
             id,
             name,
-            points: this.getCurrentPolygon().points.map((p) => ({ ...p })),
+            points: current.points.map((p) => ({ ...p })),
         }
-        this.polygonList.push(poly)
+        this.polygonList.splice(
+            this.getPolygonList().findIndex((p) => p.id === current.id) + 1,
+            0,
+            poly
+        )
         this.currentPolygonId = id
         this.firePolygonListChanged()
         return poly
@@ -126,11 +166,16 @@ export default class Data {
     }
 
     makeNewPolygonName(): string {
-        for (let i = 0; i < 9999; i++) {
-            const name = `Polygon_${i}`
+        const RX = /^([A-Z0-9_]*[A-Z_])([0-9]+)$/gi
+        const current = this.getCurrentPolygon()
+        const match = RX.exec(current.name)
+        const prefix = match ? match[1] : "SPRITE_"
+        const start = match ? parseInt(match[2]) : 0
+        for (let i = start + 1; i < start + 9999; i++) {
+            const name = `${prefix}${i}`
             if (!this.findPolygonByName(name)) return name
         }
-        return `Polygon_${Date.now()}`
+        return `${prefix}${Date.now().toString(16)}`
     }
 
     findPolygonByName(name: string): PolygonItem | undefined {
@@ -144,13 +189,10 @@ export default class Data {
         savePolygonItems(this.storage, this.polygonList)
     }, DEBOUNCE_SAVE_DELAY)
 
-    private getFirstFreeId(): number {
-        let previousId = 0
-        for (const poly of this.polygonList) {
-            if (poly.id - previousId > 1) return poly.id - 1
-
-            previousId = poly.id
-        }
-        return previousId + 1
+    private getFreeId(): number {
+        const maxId = this.polygonList
+            .map((p) => p.id)
+            .reduce((previous, current) => Math.max(previous, current), 0)
+        return maxId + 1
     }
 }

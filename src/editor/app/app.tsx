@@ -6,6 +6,8 @@ import PolygonsList from "../view/polygons-list"
 import { generateCode } from "./exporter/exporter"
 import { PolygonItem } from "../data/types"
 import { useDataContext } from "../data/hooks"
+import { useKeyboardShortcuts } from "./keyboard-shortcuts"
+import { useSelection } from "./selection"
 import "./app.css"
 
 export interface AppProps {
@@ -15,6 +17,8 @@ export interface AppProps {
 export default function App(props: AppProps) {
     const data = useDataContext()
     const refPainter = React.useRef(new painter(data))
+    useKeyboardShortcuts(data)
+    useSelection(data, refPainter.current)
     React.useEffect(() => {
         const img = new Image()
         img.src = ImageURL
@@ -32,9 +36,6 @@ export default function App(props: AppProps) {
         painter.resetPolygon(data.getCurrentPolygon())
         return () => painter.polygon.eventChange.remove(handler)
     }, [data, refPainter.current])
-    const handlePolygonSelect = (poly: PolygonItem) => {
-        refPainter.current.resetPolygon(poly)
-    }
     const handleExportCode = () => {
         const code = generateCode(data, refPainter.current.image)
         console.log(code)
@@ -45,7 +46,7 @@ export default function App(props: AppProps) {
             <EditorView painter={refPainter.current} />
             <aside>
                 <button>Load Image</button>
-                <PolygonsList onClick={handlePolygonSelect} />
+                <PolygonsList />
                 <button onClick={handleExportCode}>Export Code</button>
             </aside>
         </div>

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { PolygonItem } from "@/data/types"
+import { PolygonItem } from "@/editor/data/types"
 import "./polygon-button-view.css"
 
 export interface PolygonButtonViewProps {
@@ -8,18 +8,22 @@ export interface PolygonButtonViewProps {
     value: PolygonItem
     onSelect(this: void, id: number): void
     onDelete(this: void, id: number): void
+    onNameChange(this: void, id: number, name: string): void
 }
 
 export default function PolygonButtonView(props: PolygonButtonViewProps) {
     const [name, setName] = React.useState(props.value.name)
     const poly = props.value
+    React.useEffect(() => {
+        props.onNameChange(poly.id, name)
+    }, [name, poly])
     return (
         <div className={getClassNames(props)} title={`#${poly.id}`}>
             {props.selected && (
                 <input
                     value={name}
                     autoFocus={true}
-                    onChange={(evt) => setName(evt.target.value)}
+                    onChange={(evt) => setName(sanitizeName(evt.target.value))}
                 />
             )}
             {!props.selected && (
@@ -52,4 +56,15 @@ function getClassNames(props: PolygonButtonViewProps): string {
     if (props.selected) classNames.push("selected")
 
     return classNames.join(" ")
+}
+
+function sanitizeName(value: string): string {
+    let result = ""
+    for (const c of value) {
+        const C = c.toUpperCase()
+        if (C >= "0" && C <= "9") result += C
+        else if (C >= "A" && C <= "Z") result += C
+        else result += "_"
+    }
+    return result !== value ? result : value
 }

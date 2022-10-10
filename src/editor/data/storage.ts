@@ -22,14 +22,22 @@ export function savePolygonItems(
     storage: StorageInterface,
     items: PolygonItem[]
 ) {
-    storage.setItem(STORAGE_KEY, JSON5.stringify(items))
+    storage.setItem(
+        STORAGE_KEY,
+        JSON5.stringify(
+            items.map((item, index) => ({
+                ...item,
+                id: index + 1,
+            }))
+        )
+    )
 }
 
 function makeDefaultPolygonItemArray(): PolygonItem[] {
     return [
         {
             id: 1,
-            name: "Polygon_1",
+            name: "SPRITE_0",
             points: [],
         },
     ]

@@ -1,6 +1,7 @@
 import * as React from "react"
 import BackgroundURL from "./background.webp"
 import ForegroundURL from "./foreground.webp"
+import Logic from "./logic"
 import Painter from "./painter"
 import TestURL from "./test.webp"
 import "./game.css"
@@ -15,17 +16,14 @@ async function mountCanvas(canvas: HTMLCanvasElement) {
 
     const painter = new Painter(
         gl,
-        // await loadImage(BackgroundURL),
-        // await loadImage(ForegroundURL),
-        await loadImage(TestURL),
-        await loadImage(TestURL)
+        await loadImage(BackgroundURL),
+        await loadImage(ForegroundURL)
     )
     painter.onAll()
+    const logic = new Logic(painter)
     const draw = (time: number) => {
         window.requestAnimationFrame(draw)
-        const index = Math.floor(time / 1000) % 4
-        painter.offAll()
-        painter.on(index)
+        logic.play(time)
         painter.draw()
     }
     window.requestAnimationFrame(draw)
@@ -35,7 +33,13 @@ async function loadImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve) => {
         const img = new Image()
         img.src = url
-        img.onload = () => resolve(img)
-        img.onerror = () => resolve(img)
+        img.onload = () => {
+            console.log("Loaded:", url)
+            resolve(img)
+        }
+        img.onerror = () => {
+            console.error("Unable to load:", url)
+            resolve(img)
+        }
     })
 }

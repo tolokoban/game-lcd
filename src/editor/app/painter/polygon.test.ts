@@ -1,5 +1,5 @@
 import Polygon from "./polygon"
-import { Point } from "@/data/types"
+import { Point } from "@/editor/data/types"
 
 describe("app/painter/polygon.ts", () => {
     describe("Polygon.getPoint()", () => {

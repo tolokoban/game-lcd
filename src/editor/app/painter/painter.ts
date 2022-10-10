@@ -1,12 +1,12 @@
-import Data from "@/data/data"
+import Data from "@/editor/data/data"
 import Polygon from "./polygon"
-import { debounce } from "@/tool/async"
-import { Point, PolygonItem } from "@/data/types"
-import { PointerWatcherEvent } from "@/tool/pointer-watcher"
-import { Triangle } from "@/tool/triangulate"
+import { debounce } from "@/editor/tool/async"
+import { Point, PolygonItem } from "@/editor/data/types"
+import { PointerWatcherEvent } from "@/editor/tool/pointer-watcher"
+import { Triangle } from "@/editor/tool/triangulate"
 import PointerWatcher, {
     PointerWatcherDragStartEvent,
-} from "@/tool/pointer-watcher"
+} from "@/editor/tool/pointer-watcher"
 
 const DOT_RADIUS = 10
 
@@ -23,6 +23,13 @@ export default class Painter {
     /** Index of the polygon's point that has been selected. */
     private selectedPoint = -1
     private xRayMode = false
+    /**
+     * pointsToMoveTogether, originX and originY are used
+     * to move all the points of the current polygon together.
+     */
+    private pointsToMoveTogether: Point[] = []
+    private originX = 0
+    private originY = 0
 
     constructor(private data: Data) {
         this._canvas = document.createElement("canvas")
@@ -74,14 +81,24 @@ export default class Painter {
         const { polygon } = this
         if (!polygon) return
 
-        if (this.selectedPoint < 0) return
-
         const x = evt.x / this.scale
         const y = evt.y / this.scale
-        const point = polygon.getPoint(this.selectedPoint)
-        point.x = x
-        point.y = y
-        this.triangulate()
+        console.log("🚀 [painter] evt.button = ", evt.button) // @FIXME: Remove this line written on 2022-10-10 at 16:57
+        if (evt.button === "right") {
+            for (let i = 0; i < this.pointsToMoveTogether.length; i++) {
+                const { x: xO, y: yO } = this.pointsToMoveTogether[i]
+                polygon.points[i].x = xO + x - this.originX
+                polygon.points[i].y = yO + y - this.originY
+            }
+            this.paint()
+        } else if (evt.button === "left") {
+            if (this.selectedPoint < 0) return
+
+            const point = polygon.getPoint(this.selectedPoint)
+            point.x = x
+            point.y = y
+            this.triangulate()
+        }
     }
 
     private readonly handleDragEnd = (evt: PointerWatcherEvent) => {
@@ -96,12 +113,16 @@ export default class Painter {
         const y = evt.y / this.scale
         if (evt.button === "left") {
             if (this.addDot({ x, y })) evt.cancel()
-        } else if (evt.button === "right") {
+        } else if (evt.button === "middle") {
             evt.cancel()
             this.removeDot(x, y)
         } else {
-            evt.cancel()
-            this.triangulate()
+            console.log("🚀 [painter] evt.button = ", evt.button) // @FIXME: Remove this line written on 2022-10-10 at 16:58
+            this.pointsToMoveTogether = this.polygon.points.map((p) => ({
+                ...p,
+            }))
+            this.originX = x
+            this.originY = y
         }
     }
 

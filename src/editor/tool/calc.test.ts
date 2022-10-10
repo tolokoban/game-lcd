@@ -1,4 +1,4 @@
-import { Point } from "@/data/types"
+import { Point } from "@/editor/data/types"
 import { scalarProduct } from "./calc"
 
 describe("app/painter/point.ts", () => {

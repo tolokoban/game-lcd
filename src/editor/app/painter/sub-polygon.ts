@@ -1,5 +1,5 @@
-import Polygon from "@/app/painter/polygon"
-import { Point } from "@/data/types"
+import Polygon from "@/editor/app/painter/polygon"
+import { Point } from "@/editor/data/types"
 import { sameSign, subtractPoints, vectorProduct } from "../../tool/calc"
 
 export default class SubPolygon {

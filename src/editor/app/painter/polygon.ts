@@ -1,6 +1,6 @@
 import GenericEvent from "../../tool/generic-event"
 import SubPolygon from "./sub-polygon"
-import { Point, PolygonItem } from "@/data/types"
+import { Point, PolygonItem } from "@/editor/data/types"
 import { Triangle } from "../../tool/triangulate"
 import {
     distance,

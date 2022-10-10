@@ -1,28 +1,29 @@
 import * as React from "react"
-import Polygon from "@/app/painter/polygon"
+import Polygon from "@/editor/app/painter/polygon"
 import PolygonButton from "../polygon-button"
-import { PolygonItem } from "@/data/types"
+import { PolygonItem } from "@/editor/data/types"
 import "./polygons-list-view.css"
 import {
     useDataContext,
     usePolygonList,
     useSelectedPolygonId,
-} from "@/data/hooks"
+} from "@/editor/data/hooks"
 
 export interface PolygonsListViewProps {
     className?: string
-    onClick(this: void, polygon: PolygonItem): void
 }
 
 export default function PolygonsListView(props: PolygonsListViewProps) {
     const data = useDataContext()
     const polygons = usePolygonList()
     const selectedPolygonId = useSelectedPolygonId()
-    const handleNewPolygon = () => data.addPolygonToList()
+    const handleNewPolygon = () => data.duplicateCurrentPolygon()
     const handleDeletePolygon = (id: number) => data.removePolygonFromList(id)
     const handleSelectPolygon = (id: number) => {
         data.currentPolygonId = id
-        props.onClick(data.getCurrentPolygon())
+    }
+    const handleNameChange = (id: number, name: string) => {
+        data.updatePolygon({ name })
     }
     return (
         <div className={getClassNames(props)}>
@@ -34,10 +35,11 @@ export default function PolygonsListView(props: PolygonsListViewProps) {
                         value={poly}
                         onSelect={handleSelectPolygon}
                         onDelete={handleDeletePolygon}
+                        onNameChange={handleNameChange}
                     />
                 ))}
             </div>
-            <button onClick={handleNewPolygon}>Add new Polygon</button>
+            <button onClick={handleNewPolygon}>Duplicate Polygon (+)</button>
         </div>
     )
 }
