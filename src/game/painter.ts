@@ -23,7 +23,11 @@ export default class Painter {
     static MORTY_BOTTOM_7 = 21
     static MORTY_BOTTOM_8 = 22
     static MORTY_BOTTOM_9 = 23
-    
+    static FALL_TOP_LEFT = 24
+    static FALL_TOP_RIGHT = 25
+    static FALL_BOTTOM_RIGHT = 26
+    static FALL_BOTTOM_LEFT = 27
+
     private readonly prg: WebGLProgram
     private readonly texBackground: WebGLTexture
     private readonly texForeground: WebGLTexture
@@ -34,10 +38,16 @@ export default class Painter {
     private readonly uniTexture: WebGLUniformLocation
     private readonly vaoBackground: WebGLVertexArrayObject
     private readonly vaoForeground: WebGLVertexArrayObject
-    private readonly offsets = [0,12,24,48,78,90,102,114,126,138,150,162,174,186,198,210,222,234,246,258,270,282,294,306]
-    private readonly sizes = [6,6,12,15,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6]
-    private readonly sprites = new Uint8Array(24)
-    
+    private readonly offsets = [
+        0, 12, 24, 48, 78, 90, 102, 114, 126, 138, 150, 162, 174, 186, 198, 210,
+        222, 234, 246, 258, 270, 282, 294, 306, 318, 342, 366, 390,
+    ]
+    private readonly sizes = [
+        6, 6, 12, 15, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+        6, 12, 12, 12, 15,
+    ]
+    private readonly sprites = new Uint8Array(28)
+
     constructor(
         private readonly gl: WebGL2RenderingContext,
         background: HTMLImageElement,
@@ -79,6 +89,10 @@ export default class Painter {
             92, 89, 90, 90, 91, 92,  // MORTY_BOTTOM_7
             96, 93, 94, 94, 95, 96,  // MORTY_BOTTOM_8
             100, 97, 98, 98, 99, 100,  // MORTY_BOTTOM_9
+            106, 101, 102, 106, 102, 103, 106, 103, 104, 104, 105, 106,  // FALL_TOP_LEFT
+            112, 107, 108, 112, 108, 109, 112, 109, 110, 110, 111, 112,  // FALL_TOP_RIGHT
+            118, 113, 114, 114, 115, 116, 118, 114, 116, 116, 117, 118,  // FALL_BOTTOM_RIGHT
+            119, 120, 121, 119, 121, 122, 125, 119, 122, 125, 122, 123, 123, 124, 125,  // FALL_BOTTOM_LEFT
         ])
         // prettier-ignore
         this.drawBuff = this.createDrawBuffer([
@@ -106,6 +120,10 @@ export default class Painter {
             0.29867,0.58903, 0.29665,0.74845, 0.20247,0.74534, 0.19978,0.58385,  // MORTY_BOTTOM_7
             0.20382,0.58489, 0.20180,0.74431, 0.10763,0.74120, 0.10494,0.57971,  // MORTY_BOTTOM_8
             0.10696,0.58489, 0.10494,0.74431, 0.01076,0.74120, 0.00807,0.57971,  // MORTY_BOTTOM_9
+            0.45607,0.53106, 0.45809,0.57453, 0.16077,0.57350, 0.23207,0.36542, 0.34575,0.41822, 0.36257,0.47101,  // FALL_TOP_LEFT
+            0.84353,0.53209, 0.84353,0.57143, 0.54621,0.57039, 0.68142,0.37785, 0.81326,0.39441, 0.82066,0.51139,  // FALL_TOP_RIGHT
+            0.81394,0.98344, 0.51661,0.98240, 0.51527,0.92236, 0.62895,0.88716, 0.66998,0.82816, 0.78232,0.79089,  // FALL_BOTTOM_RIGHT
+            0.32692,0.87060, 0.39351,0.88199, 0.45607,0.97516, 0.15875,0.97412, 0.18499,0.88509, 0.19709,0.78054, 0.30674,0.78261,  // FALL_BOTTOM_LEFT
         ])
         this.texBackground = this.createTexture(background)
         this.texForeground = this.createTexture(foreground)
@@ -113,33 +131,35 @@ export default class Painter {
         this.vaoBackground = this.createBackgroundVAO()
         this.vaoForeground = this.createForegroundVAO()
         this.uniTexture = this.getUniformLocation("uniTexture")
-        this.uniAspectRatioContain = this.getUniformLocation("uniAspectRatioContain")
+        this.uniAspectRatioContain = this.getUniformLocation(
+            "uniAspectRatioContain"
+        )
     }
-    
+
     on(...spriteIndexes: number[]) {
         for (const index of spriteIndexes) {
             this.sprites[index] = 1
         }
     }
-    
+
     off(...spriteIndexes: number[]) {
         for (const index of spriteIndexes) {
             this.sprites[index] = 0
         }
     }
-    
+
     onAll() {
         for (let index = 0; index < this.sprites.length; index++) {
             this.sprites[index] = 1
         }
     }
-    
+
     offAll() {
         for (let index = 0; index < this.sprites.length; index++) {
             this.sprites[index] = 0
         }
     }
-    
+
     draw() {
         const { gl, prg, vaoBackground, vaoForeground } = this
         const w = gl.canvas.clientWidth
@@ -150,7 +170,7 @@ export default class Painter {
             canvas.height = h
         }
         gl.viewport(0, 0, w, h)
-        gl.clearColor(0.733, 0.710, 0.655, 1)
+        gl.clearColor(0.733, 0.71, 0.655, 1)
         gl.clear(gl.COLOR_BUFFER_BIT)
         gl.disable(gl.DEPTH_TEST)
         gl.disable(gl.BLEND)
@@ -178,34 +198,30 @@ export default class Painter {
         gl.bindVertexArray(vaoForeground)
         for (let index = 0; index < this.sprites.length; index++) {
             if (this.sprites[index] === 0) continue
-            
+
             const offset = this.offsets[index]
             const size = this.sizes[index]
             gl.drawElements(gl.TRIANGLES, size, gl.UNSIGNED_SHORT, offset)
         }
         gl.bindVertexArray(null)
     }
-    
+
     private createDrawBuffer(data: number[]): WebGLBuffer {
         const { gl } = this
         const buff = gl.createBuffer()
         if (!buff) throw Error("Unable to create a WebGLBuffer!")
-        
-        gl.bindBuffer( gl.ARRAY_BUFFER, buff )
-        gl.bufferData(
-            gl.ARRAY_BUFFER,
-            new Float32Array(data),
-            gl.STATIC_DRAW
-        )
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buff)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
         return buff
     }
-    
+
     private createElemBuffer(data: number[]): WebGLBuffer {
         const { gl } = this
         const buff = gl.createBuffer()
         if (!buff) throw Error("Unable to create a WebGLBuffer!")
-        
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, buff )
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buff)
         gl.bufferData(
             gl.ELEMENT_ARRAY_BUFFER,
             new Uint16Array(data),
@@ -213,29 +229,24 @@ export default class Painter {
         )
         return buff
     }
-    
+
     private createTexture(img: HTMLImageElement): WebGLTexture {
         const { gl } = this
         const tex = gl.createTexture()
         if (!tex) throw Error("Enable to create a WebGLTexture!")
-        
+
         gl.bindTexture(gl.TEXTURE_2D, tex)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-        gl.texImage2D(
-            gl.TEXTURE_2D, 0,
-            gl.RGBA, gl.RGBA,
-            gl.UNSIGNED_BYTE,
-            img
-        )
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
         return tex
     }
-    
+
     private createForegroundVAO() {
         const { gl, prg } = this
         const vao = gl.createVertexArray()
         if (!vao) throw Error("Unable to create a WebGLVertexArrayObject!")
-        
+
         gl.bindVertexArray(vao)
         gl.bindBuffer(gl.ARRAY_BUFFER, this.drawBuff)
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.elemBuff)
@@ -245,12 +256,12 @@ export default class Painter {
         gl.bindVertexArray(null)
         return vao
     }
-    
+
     private createBackgroundVAO() {
         const { gl, prg } = this
         const vao = gl.createVertexArray()
         if (!vao) throw Error("Unable to create a WebGLVertexArrayObject!")
-        
+
         gl.bindVertexArray(vao)
         gl.bindBuffer(gl.ARRAY_BUFFER, this.backBuff)
         const attUV = gl.getAttribLocation(prg, "attUV")
@@ -259,12 +270,12 @@ export default class Painter {
         gl.bindVertexArray(null)
         return vao
     }
-    
+
     private getUniformLocation(name: string) {
         const { gl, prg } = this
         const loc = gl.getUniformLocation(prg, name)
         if (!loc) throw Error(`Unable to get uniform location for "${name}"!`)
-        
+
         return loc
     }
 }
