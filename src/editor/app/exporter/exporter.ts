@@ -30,7 +30,6 @@ export function generateCode(
             `private readonly sizes = ${JSON.stringify(
                 triangles.map((tri) => tri.length)
             )}`,
-            `private readonly sprites = new Uint8Array(${items.length})`,
             "",
             "constructor(",
             [
@@ -78,39 +77,7 @@ export function generateCode(
             ],
             "}",
             "",
-            "on(...spriteIndexes: number[]) {",
-            [
-                "for (const index of spriteIndexes) {",
-                ["this.sprites[index] = 1"],
-                "}",
-            ],
-            "}",
-            "",
-            "off(...spriteIndexes: number[]) {",
-            [
-                "for (const index of spriteIndexes) {",
-                ["this.sprites[index] = 0"],
-                "}",
-            ],
-            "}",
-            "",
-            "onAll() {",
-            [
-                "for (let index = 0; index < this.sprites.length; index++) {",
-                ["this.sprites[index] = 1"],
-                "}",
-            ],
-            "}",
-            "",
-            "offAll() {",
-            [
-                "for (let index = 0; index < this.sprites.length; index++) {",
-                ["this.sprites[index] = 0"],
-                "}",
-            ],
-            "}",
-            "",
-            "draw() {",
+            "draw(spriteIndexes: number[]) {",
             [
                 "const { gl, prg, vaoBackground, vaoForeground } = this",
                 "const w = gl.canvas.clientWidth",
@@ -148,10 +115,8 @@ export function generateCode(
                 "gl.bindTexture(gl.TEXTURE_2D, this.texForeground)",
                 "gl.uniform1i(this.uniTexture, 0)",
                 "gl.bindVertexArray(vaoForeground)",
-                "for (let index = 0; index < this.sprites.length; index++) {",
+                "for (const index of spriteIndexes) {",
                 [
-                    "if (this.sprites[index] === 0) continue",
-                    "",
                     "const offset = this.offsets[index]",
                     "const size = this.sizes[index]",
                     "gl.drawElements(gl.TRIANGLES, size, gl.UNSIGNED_SHORT, offset)",

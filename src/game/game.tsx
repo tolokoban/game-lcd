@@ -1,16 +1,24 @@
 import * as React from "react"
 import BackgroundURL from "./background.webp"
 import ForegroundURL from "./foreground.webp"
-import Logic from "./logic"
+import Logic from "./logic/logic"
 import Painter from "./painter"
 import TestURL from "./test.webp"
 import "./game.css"
 
 export function Game() {
-    return <canvas className="game" ref={mountCanvas}></canvas>
+    return (
+        <div className="game">
+            <canvas ref={mountCanvas}></canvas>
+            <div id="score">0</div>
+        </div>
+    )
 }
 
 async function mountCanvas(canvas: HTMLCanvasElement) {
+    const scoreDiv = document.getElementById("score")
+    if (!scoreDiv) throw Error("Missing div with id score!")
+
     const gl = canvas.getContext("webgl2")
     if (!gl) throw Error("Unable to create WebGL2RenderingContext!")
 
@@ -19,12 +27,20 @@ async function mountCanvas(canvas: HTMLCanvasElement) {
         await loadImage(BackgroundURL),
         await loadImage(ForegroundURL)
     )
-    painter.onAll()
+    let score = 0
     const logic = new Logic(painter)
+    logic.eventScoreUpdate.add((value) => {
+        score = Math.max(0, score + value)
+        scoreDiv.textContent = `${score}`
+    })
+    logic.eventMiss.add(() => {
+        score = Math.max(0, score - 5)
+        scoreDiv.textContent = `${score}`
+    })
     const draw = (time: number) => {
-        window.requestAnimationFrame(draw)
         logic.play(time)
-        painter.draw()
+        painter.draw(logic.sprites.list())
+        window.requestAnimationFrame(draw)
     }
     window.requestAnimationFrame(draw)
 }

@@ -46,7 +46,6 @@ export default class Painter {
         6, 6, 12, 15, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
         6, 12, 12, 12, 15,
     ]
-    private readonly sprites = new Uint8Array(28)
 
     constructor(
         private readonly gl: WebGL2RenderingContext,
@@ -136,31 +135,7 @@ export default class Painter {
         )
     }
 
-    on(...spriteIndexes: number[]) {
-        for (const index of spriteIndexes) {
-            this.sprites[index] = 1
-        }
-    }
-
-    off(...spriteIndexes: number[]) {
-        for (const index of spriteIndexes) {
-            this.sprites[index] = 0
-        }
-    }
-
-    onAll() {
-        for (let index = 0; index < this.sprites.length; index++) {
-            this.sprites[index] = 1
-        }
-    }
-
-    offAll() {
-        for (let index = 0; index < this.sprites.length; index++) {
-            this.sprites[index] = 0
-        }
-    }
-
-    draw() {
+    draw(spriteIndexes: number[]) {
         const { gl, prg, vaoBackground, vaoForeground } = this
         const w = gl.canvas.clientWidth
         const h = gl.canvas.clientHeight
@@ -196,9 +171,7 @@ export default class Painter {
         gl.bindTexture(gl.TEXTURE_2D, this.texForeground)
         gl.uniform1i(this.uniTexture, 0)
         gl.bindVertexArray(vaoForeground)
-        for (let index = 0; index < this.sprites.length; index++) {
-            if (this.sprites[index] === 0) continue
-
+        for (const index of spriteIndexes) {
             const offset = this.offsets[index]
             const size = this.sizes[index]
             gl.drawElements(gl.TRIANGLES, size, gl.UNSIGNED_SHORT, offset)
