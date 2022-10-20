@@ -12,37 +12,6 @@ const MORTY_TICK = 1 / MORTY_STEP_DURATION
 // but not at the same time. There is a shift.
 const MORTY_SHIFT = MORTY_STEP_DURATION / 2
 
-interface Trap {
-    lane: "top" | "bot"
-    // Sprite of a Rick above a trap:
-    // MORTY_TOP_3, MORTY_TOP_6,
-    // MORTY_BOT_3, MORTY_BOT_6.
-    trapSprite: number
-    // Where Rick should be to prevent Rick
-    // from falling.
-    // RICK_TOP_LEFT, ...
-    whereRickShouldBe: number
-    // If Morty falls, we will play this sprites animation.
-    fallAnimation: number[]
-}
-
-const TRAPS: Trap[] = [
-    {
-        lane: "top",
-        trapSprite: Painter.MORTY_TOP_3,
-        whereRickShouldBe: Painter.RICK_TOP_LEFT,
-        fallAnimation: [Painter.FALL_TOP_LEFT],
-    },
-    {
-        lane: "top",
-        trapSprite: Painter.MORTY_TOP_6,
-        whereRickShouldBe: Painter.RICK_TOP_RIGHT,
-        fallAnimation: [Painter.FALL_TOP_RIGHT],
-    },
-]
-const TRAPS_TOP = TRAPS.filter((trap) => trap.lane === "top")
-const TRAPS_BOT = TRAPS.filter((trap) => trap.lane === "bot")
-
 export default class Logic {
     public readonly sprites = makeSprites()
     public readonly eventScoreUpdate = new GenericEvent<number>()
@@ -177,10 +146,9 @@ export default class Logic {
             if (pos >= MORTY_PATH_LENGTH) {
                 // Return to start.
                 const prevPos = min(mortyIndexes)
-                if (prevPos > 2) pos = rnd(-1, -9)
-                else {
-                    pos = Math.min(-1, prevPos) - rnd(0, 9)
-                    if (prevPos - pos === 3) pos--
+                while (true) {
+                    pos = prevPos - rnd(1, MORTY_PATH_LENGTH)
+                    if (pos < 0 && prevPos - pos !== 3) break
                 }
             }
             mortyIndexes[k] = pos
@@ -203,13 +171,38 @@ export default class Logic {
     }
 
     private moveRickRight() {
-        this.rickIndex = (this.rickIndex + 1) % RICK_PATH_LENGTH
+        switch (this.rickIndex) {
+            case 0:
+                this.rickIndex = 1
+                break
+            case 1:
+                this.rickIndex = 2
+                break
+            case 2:
+                this.rickIndex = 1
+                break
+            case 3:
+                this.rickIndex = 2
+                break
+        }
         this.paintRick()
     }
 
     private moveRickLeft() {
-        this.rickIndex =
-            (this.rickIndex - 1 + RICK_PATH_LENGTH) % RICK_PATH_LENGTH
+        switch (this.rickIndex) {
+            case 0:
+                this.rickIndex = 3
+                break
+            case 1:
+                this.rickIndex = 0
+                break
+            case 2:
+                this.rickIndex = 3
+                break
+            case 3:
+                this.rickIndex = 0
+                break
+        }
         this.paintRick()
     }
 
