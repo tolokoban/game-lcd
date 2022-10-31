@@ -143,19 +143,18 @@ export default class Logic {
         for (let k = 0; k < mortyIndexes.length; k++) {
             // Move one step forward.
             let pos = mortyIndexes[k] + 1
-            if (pos >= MORTY_PATH_LENGTH) {
-                // Return to start.
-                const prevPos = min(mortyIndexes)
-                while (true) {
-                    pos = prevPos - rnd(1, MORTY_PATH_LENGTH)
-                    if (pos < 0 && prevPos - pos !== 3) break
-                }
-            }
             mortyIndexes[k] = pos
-            if (pos >= 0 && pos < MORTY_PATH_LENGTH) {
-                if (onMove(pos)) mortyIndexes[k] = MORTY_PATH_LENGTH
-            }
+            onMove(pos)
         }
+        const inGameMortyIndexes = mortyIndexes.filter(
+            (idx) => idx < MORTY_PATH_LENGTH
+        )
+        if (inGameMortyIndexes.length === mortyIndexes.length) return
+
+        while (inGameMortyIndexes.length < mortyIndexes.length) {
+            addMorty(inGameMortyIndexes)
+        }
+        mortyIndexes.splice(0, mortyIndexes.length, ...inGameMortyIndexes)
     }
 
     private readonly inputHandler: UserInputHandler = (action) => {
@@ -218,7 +217,10 @@ export default class Logic {
             this.addToCinematic(300, () => this.sprites.off(name, step))
             this.addToCinematic(300, () => this.sprites.on(name, step))
         }
-        this.addToCinematic(300, () => this.sprites.off(name, step))
+        this.addToCinematic(300, () => {
+            this.sprites.off(name, step)
+            this.resetMorties()
+        })
     }
 
     private resetCinematic() {
@@ -234,12 +236,40 @@ export default class Logic {
         const [time] = this.cinematic.at(-1) as [number, () => void]
         this.cinematic.push([time + delay, action])
     }
+
+    /**
+     * Remove all the visible Morties and put them at the end of the tail.
+     */
+    private resetMorties() {
+        this.resetMortyIndexes(this.mortyTopIndexes)
+        this.resetMortyIndexes(this.mortyBotIndexes)
+    }
+
+    private resetMortyIndexes(mortyIndexes: number[]) {
+        mortyIndexes.splice(0, mortyIndexes.length)
+        for (let loop = 0; loop < 3; loop++) {
+            addMorty(mortyIndexes)
+        }
+    }
+}
+
+function addMorty(mortyIndexes: number[]) {
+    const lastMorty = Math.min(
+        0,
+        mortyIndexes.reduce(
+            (acc, val) => Math.min(acc, val),
+            Number.MAX_SAFE_INTEGER
+        )
+    )
+    for (;;) {
+        const pos = lastMorty - rnd(1, MORTY_PATH_LENGTH)
+        if (mortyIndexes.includes(pos + 3)) continue
+
+        mortyIndexes.push(pos)
+        return
+    }
 }
 
 function rnd(a: number, b: number): number {
     return a + Math.floor(Math.random() * (b - a))
-}
-
-function min(arr: number[]): number {
-    return arr.reduce((acc, val) => Math.min(acc, val), Number.MAX_SAFE_INTEGER)
 }

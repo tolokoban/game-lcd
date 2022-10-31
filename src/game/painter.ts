@@ -23,10 +23,6 @@ export default class Painter {
     static MORTY_BOTTOM_7 = 21
     static MORTY_BOTTOM_8 = 22
     static MORTY_BOTTOM_9 = 23
-    static FALL_TOP_LEFT = 24
-    static FALL_TOP_RIGHT = 25
-    static FALL_BOTTOM_RIGHT = 26
-    static FALL_BOTTOM_LEFT = 27
 
     private readonly prg: WebGLProgram
     private readonly texBackground: WebGLTexture
@@ -39,22 +35,21 @@ export default class Painter {
     private readonly vaoBackground: WebGLVertexArrayObject
     private readonly vaoForeground: WebGLVertexArrayObject
     private readonly offsets = [
-        0, 12, 24, 48, 78, 90, 102, 114, 126, 138, 150, 162, 174, 186, 198, 210,
-        222, 234, 246, 258, 270, 282, 294, 306, 318, 342, 366, 390,
+        0, 36, 66, 102, 138, 150, 162, 174, 186, 198, 210, 222, 234, 246, 258,
+        270, 282, 294, 306, 318, 330, 342, 354, 366,
     ]
     private readonly sizes = [
-        6, 6, 12, 15, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-        6, 12, 12, 12, 15,
+        18, 15, 18, 18, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+        6,
     ]
+    private ratioImage = 1
 
     constructor(
         private readonly gl: WebGL2RenderingContext,
         background: HTMLImageElement,
         foreground: HTMLImageElement
     ) {
-        const ratio = ensureSameAspectRatio(background, foreground)
-        const x = ratio > 1 ? 1 : 1 / ratio
-        const y = ratio > 1 ? ratio : 1
+        this.ratioImage = ensureSameAspectRatio(background, foreground)
         // prettier-ignore
         this.backBuff = this.createDrawBuffer([
             -1, +1,
@@ -64,65 +59,57 @@ export default class Painter {
         ])
         // prettier-ignore
         this.elemBuff = this.createElemBuffer([
-            3, 0, 1, 1, 2, 3,  // RICK_TOP_LEFT
-            7, 4, 5, 5, 6, 7,  // RICK_TOP_RIGHT
-            13, 8, 9, 13, 9, 10, 13, 10, 11, 11, 12, 13,  // RICK_BOTTOM_RIGHT
-            20, 14, 15, 20, 15, 16, 20, 16, 17, 20, 17, 18, 18, 19, 20,  // RICK_BOTTOM_LEFT
-            24, 21, 22, 22, 23, 24,  // MORTY_TOP_0
-            28, 25, 26, 26, 27, 28,  // MORTY_TOP_1
-            32, 29, 30, 30, 31, 32,  // MORTY_TOP_2
-            36, 33, 34, 34, 35, 36,  // MORTY_TOP_3
-            40, 37, 38, 38, 39, 40,  // MORTY_TOP_4
-            44, 41, 42, 42, 43, 44,  // MORTY_TOP_5
-            48, 45, 46, 46, 47, 48,  // MORTY_TOP_6
-            52, 49, 50, 50, 51, 52,  // MORTY_TOP_7
-            56, 53, 54, 54, 55, 56,  // MORTY_TOP_8
-            60, 57, 58, 58, 59, 60,  // MORTY_TOP_9
-            64, 61, 62, 62, 63, 64,  // MORTY_BOTTOM_0
-            68, 65, 66, 66, 67, 68,  // MORTY_BOTTOM_1
-            72, 69, 70, 70, 71, 72,  // MORTY_BOTTOM_2
-            76, 73, 74, 74, 75, 76,  // MORTY_BOTTOM_3
-            80, 77, 78, 78, 79, 80,  // MORTY_BOTTOM_4
-            84, 81, 82, 82, 83, 84,  // MORTY_BOTTOM_5
-            88, 85, 86, 86, 87, 88,  // MORTY_BOTTOM_6
-            92, 89, 90, 90, 91, 92,  // MORTY_BOTTOM_7
-            96, 93, 94, 94, 95, 96,  // MORTY_BOTTOM_8
-            100, 97, 98, 98, 99, 100,  // MORTY_BOTTOM_9
-            106, 101, 102, 106, 102, 103, 106, 103, 104, 104, 105, 106,  // FALL_TOP_LEFT
-            112, 107, 108, 112, 108, 109, 112, 109, 110, 110, 111, 112,  // FALL_TOP_RIGHT
-            118, 113, 114, 114, 115, 116, 118, 114, 116, 116, 117, 118,  // FALL_BOTTOM_RIGHT
-            119, 120, 121, 119, 121, 122, 125, 119, 122, 125, 122, 123, 123, 124, 125,  // FALL_BOTTOM_LEFT
+            0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5, 7, 0, 5, 5, 6, 7,  // RICK_TOP_LEFT
+            14, 8, 9, 14, 9, 10, 14, 10, 11, 14, 11, 12, 12, 13, 14,  // RICK_TOP_RIGHT
+            22, 15, 16, 22, 16, 17, 22, 17, 18, 22, 18, 19, 22, 19, 20, 20, 21, 22,  // RICK_BOTTOM_RIGHT
+            30, 23, 24, 30, 24, 25, 30, 25, 26, 30, 26, 27, 30, 27, 28, 28, 29, 30,  // RICK_BOTTOM_LEFT
+            34, 31, 32, 32, 33, 34,  // MORTY_TOP_0
+            38, 35, 36, 36, 37, 38,  // MORTY_TOP_1
+            42, 39, 40, 40, 41, 42,  // MORTY_TOP_2
+            46, 43, 44, 44, 45, 46,  // MORTY_TOP_3
+            50, 47, 48, 48, 49, 50,  // MORTY_TOP_4
+            54, 51, 52, 52, 53, 54,  // MORTY_TOP_5
+            58, 55, 56, 56, 57, 58,  // MORTY_TOP_6
+            62, 59, 60, 60, 61, 62,  // MORTY_TOP_7
+            66, 63, 64, 64, 65, 66,  // MORTY_TOP_8
+            70, 67, 68, 68, 69, 70,  // MORTY_TOP_9
+            74, 71, 72, 72, 73, 74,  // MORTY_BOTTOM_0
+            78, 75, 76, 76, 77, 78,  // MORTY_BOTTOM_1
+            82, 79, 80, 80, 81, 82,  // MORTY_BOTTOM_2
+            86, 83, 84, 84, 85, 86,  // MORTY_BOTTOM_3
+            90, 87, 88, 88, 89, 90,  // MORTY_BOTTOM_4
+            94, 91, 92, 92, 93, 94,  // MORTY_BOTTOM_5
+            98, 95, 96, 96, 97, 98,  // MORTY_BOTTOM_6
+            102, 99, 100, 100, 101, 102,  // MORTY_BOTTOM_7
+            106, 103, 104, 104, 105, 106,  // MORTY_BOTTOM_8
+            110, 107, 108, 108, 109, 110,  // MORTY_BOTTOM_9
         ])
         // prettier-ignore
         this.drawBuff = this.createDrawBuffer([
-            0.49778,0.34369, 0.49845,0.54037, 0.38544,0.48654, 0.28320,0.34161,  // RICK_TOP_LEFT
-            0.71976,0.33954, 0.58590,0.50414, 0.49912,0.54762, 0.49778,0.34161,  // RICK_TOP_RIGHT
-            0.73792,0.74845, 0.70967,0.82298, 0.66998,0.82919, 0.62155,0.89130, 0.51863,0.91408, 0.51661,0.74948,  // RICK_BOTTOM_RIGHT
-            0.27916,0.75052, 0.31414,0.81056, 0.32019,0.85921, 0.35786,0.86853, 0.40629,0.91304, 0.47962,0.91097, 0.47693,0.74845,  // RICK_BOTTOM_LEFT
-            0.01076,0.18634, 0.01076,0.33747, 0.11435,0.33644, 0.11368,0.18116,  // MORTY_TOP_0
-            0.20786,0.17702, 0.20517,0.33747, 0.11435,0.33644, 0.11368,0.18116,  // MORTY_TOP_1
-            0.30876,0.17495, 0.30741,0.33437, 0.20584,0.33540, 0.20718,0.17598,  // MORTY_TOP_2
-            0.40024,0.17598, 0.39957,0.33954, 0.30539,0.33954, 0.30674,0.17598,  // MORTY_TOP_3
-            0.50114,0.18012, 0.49912,0.33954, 0.39755,0.34369, 0.39890,0.18012,  // MORTY_TOP_4
-            0.60137,0.17805, 0.59935,0.33747, 0.49778,0.34161, 0.49912,0.17805,  // MORTY_TOP_5
-            0.70227,0.17909, 0.70025,0.33851, 0.59868,0.34265, 0.60003,0.17909,  // MORTY_TOP_6
-            0.79577,0.18116, 0.79376,0.34058, 0.69218,0.34472, 0.69353,0.18116,  // MORTY_TOP_7
-            0.89802,0.17909, 0.89600,0.33851, 0.79443,0.34265, 0.79577,0.17909,  // MORTY_TOP_8
-            0.99018,0.18012, 0.98816,0.33954, 0.90071,0.33851, 0.90004,0.17805,  // MORTY_TOP_9
-            0.99085,0.58592, 0.98883,0.74534, 0.89466,0.74224, 0.89197,0.58075,  // MORTY_BOTTOM_0
-            0.89264,0.58696, 0.89062,0.74638, 0.79645,0.74327, 0.79376,0.58178,  // MORTY_BOTTOM_1
-            0.79510,0.58903, 0.79308,0.74845, 0.69891,0.74534, 0.69622,0.58385,  // MORTY_BOTTOM_2
-            0.69554,0.59110, 0.69353,0.75052, 0.59935,0.74741, 0.59666,0.58592,  // MORTY_BOTTOM_3
-            0.59935,0.58903, 0.59733,0.74845, 0.50316,0.74534, 0.50047,0.58385,  // MORTY_BOTTOM_4
-            0.49912,0.58696, 0.49711,0.74638, 0.40293,0.74327, 0.40024,0.58178,  // MORTY_BOTTOM_5
-            0.39890,0.58592, 0.39688,0.74534, 0.30270,0.74224, 0.30001,0.58075,  // MORTY_BOTTOM_6
-            0.29867,0.58903, 0.29665,0.74845, 0.20247,0.74534, 0.19978,0.58385,  // MORTY_BOTTOM_7
-            0.20382,0.58489, 0.20180,0.74431, 0.10763,0.74120, 0.10494,0.57971,  // MORTY_BOTTOM_8
-            0.10696,0.58489, 0.10494,0.74431, 0.01076,0.74120, 0.00807,0.57971,  // MORTY_BOTTOM_9
-            0.45607,0.53106, 0.45809,0.57453, 0.16077,0.57350, 0.23207,0.36542, 0.34575,0.41822, 0.36257,0.47101,  // FALL_TOP_LEFT
-            0.84353,0.53209, 0.84353,0.57143, 0.54621,0.57039, 0.68142,0.37785, 0.81326,0.39441, 0.82066,0.51139,  // FALL_TOP_RIGHT
-            0.81394,0.98344, 0.51661,0.98240, 0.51527,0.92236, 0.62895,0.88716, 0.66998,0.82816, 0.78232,0.79089,  // FALL_BOTTOM_RIGHT
-            0.32692,0.87060, 0.39351,0.88199, 0.45607,0.97516, 0.15875,0.97412, 0.18499,0.88509, 0.19709,0.78054, 0.30674,0.78261,  // FALL_BOTTOM_LEFT
+            0.50082,0.34711, 0.50156,0.58489, 0.37113,0.58696, 0.37651,0.50932, 0.34558,0.45756, 0.33751,0.37992, 0.29314,0.36335, 0.29247,0.34369,  // RICK_TOP_LEFT
+            0.70234,0.34279, 0.70125,0.36335, 0.65956,0.38199, 0.65889,0.43892, 0.62595,0.59524, 0.50156,0.57660, 0.49955,0.34576,  // RICK_TOP_RIGHT
+            0.70730,0.74948, 0.70730,0.77226, 0.65486,0.78882, 0.65419,0.84679, 0.61990,0.89855, 0.62527,0.98344, 0.50291,0.98137, 0.50096,0.75073,  // RICK_BOTTOM_RIGHT
+            0.28987,0.75155, 0.29045,0.77433, 0.34558,0.78882, 0.34491,0.84472, 0.37853,0.89648, 0.37920,0.99172, 0.50224,0.99172, 0.50089,0.75362,  // RICK_BOTTOM_LEFT
+            0.00336,0.18116, 0.00383,0.33183, 0.10825,0.32919, 0.10757,0.17909,  // MORTY_TOP_0
+            0.20775,0.15839, 0.20977,0.34990, 0.10959,0.34576, 0.11026,0.16563,  // MORTY_TOP_1
+            0.30524,0.18737, 0.29650,0.34265, 0.21717,0.33644, 0.21985,0.19048,  // MORTY_TOP_2
+            0.36979,0.34576, 0.31869,0.34679, 0.31802,0.19255, 0.37180,0.19772,  // MORTY_TOP_3
+            0.50224,0.17391, 0.49686,0.34990, 0.39668,0.34576, 0.39601,0.17805,  // MORTY_TOP_4
+            0.59031,0.18116, 0.59099,0.33644, 0.52711,0.33954, 0.52510,0.18841,  // MORTY_TOP_5
+            0.67973,0.18530, 0.67973,0.34161, 0.61317,0.34369, 0.61519,0.18737,  // MORTY_TOP_6
+            0.78344,0.18302, 0.78529,0.34369, 0.70259,0.33644, 0.70239,0.18302,  // MORTY_TOP_7
+            0.90093,0.19151, 0.87807,0.33644, 0.80479,0.34058, 0.80344,0.19669,  // MORTY_TOP_8
+            0.98027,0.17391, 0.99708,0.34990, 0.90360,0.34611, 0.90362,0.17909,  // MORTY_TOP_9
+            0.97960,0.73913, 0.90564,0.73602, 0.90362,0.58489, 0.97220,0.58696,  // MORTY_BOTTOM_0
+            0.88681,0.57246, 0.88816,0.75673, 0.78798,0.75362, 0.78596,0.56832,  // MORTY_BOTTOM_1
+            0.77655,0.74845, 0.69654,0.74741, 0.69443,0.59556, 0.76714,0.59627,  // MORTY_BOTTOM_2
+            0.67906,0.60352, 0.68511,0.75362, 0.62124,0.75155, 0.62259,0.60766,  // MORTY_BOTTOM_3
+            0.59368,0.59213, 0.60578,0.74224, 0.50560,0.75776, 0.49417,0.57867,  // MORTY_BOTTOM_4
+            0.46593,0.59213, 0.47131,0.74845, 0.40542,0.74948, 0.40266,0.58978,  // MORTY_BOTTOM_5
+            0.37449,0.74948, 0.32205,0.74845, 0.32138,0.59938, 0.37382,0.60352,  // MORTY_BOTTOM_6
+            0.29179,0.58592, 0.29029,0.75302, 0.20708,0.74741, 0.20708,0.58903,  // MORTY_BOTTOM_7
+            0.20103,0.75052, 0.11295,0.74741, 0.10403,0.59435, 0.18825,0.59524,  // MORTY_BOTTOM_8
+            0.08808,0.57557, 0.09682,0.74638, 0.00134,0.75880, 0.00538,0.58282,  // MORTY_BOTTOM_9
         ])
         this.texBackground = this.createTexture(background)
         this.texForeground = this.createTexture(foreground)
@@ -136,7 +123,7 @@ export default class Painter {
     }
 
     draw(spriteIndexes: number[]) {
-        const { gl, prg, vaoBackground, vaoForeground } = this
+        const { gl, prg, vaoBackground, vaoForeground, ratioImage } = this
         const w = gl.canvas.clientWidth
         const h = gl.canvas.clientHeight
         const { canvas } = gl
@@ -144,13 +131,19 @@ export default class Painter {
             canvas.width = w
             canvas.height = h
         }
+        const ratioScreen = w / h
+        const ratio = ratioImage / ratioScreen
+        let ratioX = 1
+        let ratioY = 1
+        if (ratio > 1) ratioY = 1 / ratio
+        else ratioX = ratio
         gl.viewport(0, 0, w, h)
         gl.clearColor(0.733, 0.71, 0.655, 1)
         gl.clear(gl.COLOR_BUFFER_BIT)
         gl.disable(gl.DEPTH_TEST)
         gl.disable(gl.BLEND)
         gl.useProgram(prg)
-        gl.uniform2f(this.uniAspectRatioContain, h / w, 1)
+        gl.uniform2f(this.uniAspectRatioContain, ratioX, ratioY)
         gl.activeTexture(gl.TEXTURE0)
         gl.bindTexture(gl.TEXTURE_2D, this.texBackground)
         gl.uniform1i(this.uniTexture, 0)
@@ -166,7 +159,7 @@ export default class Painter {
             gl.ONE
         )
         gl.useProgram(prg)
-        gl.uniform2f(this.uniAspectRatioContain, h / w, 1)
+        gl.uniform2f(this.uniAspectRatioContain, ratioX, ratioY)
         gl.activeTexture(gl.TEXTURE0)
         gl.bindTexture(gl.TEXTURE_2D, this.texForeground)
         gl.uniform1i(this.uniTexture, 0)
@@ -211,6 +204,8 @@ export default class Painter {
         gl.bindTexture(gl.TEXTURE_2D, tex)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
         return tex
     }
@@ -261,8 +256,10 @@ interface Dimension {
 function ensureSameAspectRatio(img1: Dimension, img2: Dimension): number {
     const ratio1 = img1.width / img1.height
     const ratio2 = img2.width / img2.height
-    if (Math.abs(ratio1 - ratio2) > 1e-6) {
-        throw Error("Background and foregroung must have the same aspect ratio!")
+    if (Math.abs(ratio1 - ratio2) > 1e-3) {
+        throw Error(
+            "Background and foregroung must have the same aspect ratio!"
+        )
     }
     return ratio1
 }
@@ -270,16 +267,16 @@ function ensureSameAspectRatio(img1: Dimension, img2: Dimension): number {
 function createProgram(gl: WebGL2RenderingContext) {
     const prg = gl.createProgram()
     if (!prg) throw Error("Unable to create WebGL Program!")
-    
+
     const vertShader = gl.createShader(gl.VERTEX_SHADER)
     if (!vertShader) throw Error("Unable to create a Vertex Shader handle!")
-    
+
     gl.shaderSource(vertShader, VERT)
     gl.compileShader(vertShader)
     gl.attachShader(prg, vertShader)
     const fragShader = gl.createShader(gl.FRAGMENT_SHADER)
     if (!fragShader) throw Error("Unable to create a Fragment Shader handle!")
-    
+
     gl.shaderSource(fragShader, FRAG)
     gl.compileShader(fragShader)
     gl.attachShader(prg, fragShader)

@@ -1,6 +1,6 @@
 import * as React from "react"
-import BackgroundURL from "./background.webp"
-import ForegroundURL from "./foreground.webp"
+import BackgroundURL from "@/gfx/background.webp"
+import ForegroundURL from "@/gfx/foreground.webp"
 import Logic from "./logic/logic"
 import Painter from "./painter"
 import TestURL from "./test.webp"
