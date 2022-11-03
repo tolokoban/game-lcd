@@ -128,8 +128,10 @@ export default class Painter {
         const h = gl.canvas.clientHeight
         const { canvas } = gl
         if (canvas.width !== w || canvas.height !== h) {
-            canvas.width = w
-            canvas.height = h
+            const dpr = window.devicePixelRatio
+            canvas.width = w * dpr
+            canvas.height = h * dpr
+            gl.viewport(0, 0, w * dpr, h * dpr)
         }
         const ratioScreen = w / h
         const ratio = ratioImage / ratioScreen
@@ -137,7 +139,6 @@ export default class Painter {
         let ratioY = 1
         if (ratio > 1) ratioY = 1 / ratio
         else ratioX = ratio
-        gl.viewport(0, 0, w, h)
         gl.clearColor(0.733, 0.71, 0.655, 1)
         gl.clear(gl.COLOR_BUFFER_BIT)
         gl.disable(gl.DEPTH_TEST)
@@ -149,6 +150,7 @@ export default class Painter {
         gl.uniform1i(this.uniTexture, 0)
         gl.bindVertexArray(vaoBackground)
         gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+
         gl.bindVertexArray(null)
         gl.enable(gl.BLEND)
         gl.blendEquation(gl.FUNC_ADD)

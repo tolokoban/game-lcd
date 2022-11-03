@@ -19,7 +19,9 @@ async function mountCanvas(canvas: HTMLCanvasElement) {
     const scoreDiv = document.getElementById("score")
     if (!scoreDiv) throw Error("Missing div with id score!")
 
-    const gl = canvas.getContext("webgl2")
+    const gl = canvas.getContext("webgl2", {
+        antialias: false,
+    })
     if (!gl) throw Error("Unable to create WebGL2RenderingContext!")
 
     const painter = new Painter(
