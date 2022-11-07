@@ -1,6 +1,8 @@
+import BasePainter from "../base-painter"
 import GenericEvent from "../../editor/tool/generic-event"
 import Painter from "../painter"
 import { attachUserInputHandler, UserInputHandler } from "./user-input"
+import { getHeapStatistics } from "v8"
 import { makeSprites } from "./make-sprites"
 
 const MORTY_PATH_LENGTH = 10
@@ -18,6 +20,7 @@ export default class Logic {
     public readonly eventMiss = new GenericEvent<void>()
 
     private score = 0
+    private lifes = 3
     private rickIndex = 0
     private readonly mortyTopIndexes: number[]
     private readonly mortyBotIndexes: number[]
@@ -39,6 +42,7 @@ export default class Logic {
     play(time: number) {
         this.time = time
         const { mode } = this
+        this.paintLifes()
         if (mode === "play") {
             this.playMortyTop(time)
             this.playMortyBot(time)
@@ -57,7 +61,21 @@ export default class Logic {
 
             cinematic.shift()
             action()
+            this.paintLifes()
         }
+    }
+
+    paintLifes() {
+        const LIFES = [
+            BasePainter.LIFE_1,
+            BasePainter.LIFE_2,
+            BasePainter.LIFE_3,
+        ]
+        this.sprites.off("lifes")
+        const { lifes } = this
+        if (lifes > 0) this.sprites.on("life1")
+        if (lifes > 1) this.sprites.on("life2")
+        if (lifes > 2) this.sprites.on("life3")
     }
 
     /**
@@ -223,11 +241,23 @@ export default class Logic {
         this.resetCinematic()
         this.addToCinematic(0, () => this.sprites.on(name, step))
         for (let loop = 0; loop < 4; loop++) {
-            this.addToCinematic(300, () => this.sprites.off(name, step))
-            this.addToCinematic(300, () => this.sprites.on(name, step))
+            this.addToCinematic(300, () => {
+                this.sprites.off(name, step)
+                this.lifes--
+            })
+            this.addToCinematic(300, () => {
+                this.sprites.on(name, step)
+                this.lifes++
+            })
         }
         this.addToCinematic(300, () => {
             this.sprites.off(name, step)
+            this.lifes--
+            if (this.lifes < 1) {
+                this.lifes = 3
+                this.score = 0
+                this.eventScoreUpdate.fire(this.score)
+            }
             this.resetMorties()
         })
     }

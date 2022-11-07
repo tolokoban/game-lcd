@@ -37,5 +37,9 @@ export function makeSprites() {
             Painter.MORTY_BOTTOM_8,
             Painter.MORTY_BOTTOM_9,
         ],
+        lifes: [Painter.LIFE_1, Painter.LIFE_2, Painter.LIFE_3],
+        life1: [Painter.LIFE_1],
+        life2: [Painter.LIFE_2],
+        life3: [Painter.LIFE_3],
     })
 }

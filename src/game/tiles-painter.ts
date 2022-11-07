@@ -39,7 +39,7 @@ export default class TilesPainter {
         }
         let ratioX = 1
         let ratioY = 1
-        let scale = 2
+        let scale = 1.5
         const ratio = w / h
         if (w > h) {
             if (ratio > 1) ratioY = 1 / ratio
