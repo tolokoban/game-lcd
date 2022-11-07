@@ -17,6 +17,7 @@ export default class Logic {
     public readonly eventScoreUpdate = new GenericEvent<number>()
     public readonly eventMiss = new GenericEvent<void>()
 
+    private score = 0
     private rickIndex = 0
     private readonly mortyTopIndexes: number[]
     private readonly mortyBotIndexes: number[]
@@ -30,13 +31,8 @@ export default class Logic {
     constructor(private readonly painter: Painter) {
         attachUserInputHandler(this.inputHandler)
         const top1 = -1
-        const top2 = top1 - MORTY_PATH_LENGTH - rnd(0, 2)
-        const top3 = top2 - MORTY_PATH_LENGTH - rnd(0, 2)
-        this.mortyTopIndexes = [top1, top2, top3]
-        const bot1 = rnd(-2, -7)
-        const bot2 = bot1 - MORTY_PATH_LENGTH - rnd(0, 2)
-        const bot3 = bot2 - MORTY_PATH_LENGTH - rnd(0, 2)
-        this.mortyBotIndexes = [bot1, bot2, bot3]
+        this.mortyTopIndexes = [-1]
+        this.mortyBotIndexes = [rnd(-2, -7)]
         this.sprites.on("rick", this.rickIndex)
     }
 
@@ -64,6 +60,17 @@ export default class Logic {
         }
     }
 
+    /**
+     * @returns The number of simulataneous Morties per line.
+     * This depends on the current score.
+     */
+    private getLevel() {
+        const { score } = this
+        if (score < 10) return 1
+        if (score < 30) return 2
+        return 3
+    }
+
     private onMorty(name: "mortyTop" | "mortyBot") {
         this.sprites.clear(name)
         const indexes =
@@ -77,7 +84,8 @@ export default class Logic {
     }
 
     private addToScore(value: number) {
-        this.eventScoreUpdate.fire(value)
+        this.score += value
+        this.eventScoreUpdate.fire(this.score)
     }
 
     private playMortyTop(time: number) {
@@ -149,9 +157,10 @@ export default class Logic {
         const inGameMortyIndexes = mortyIndexes.filter(
             (idx) => idx < MORTY_PATH_LENGTH
         )
-        if (inGameMortyIndexes.length === mortyIndexes.length) return
+        const level = this.getLevel()
+        if (inGameMortyIndexes.length === level) return
 
-        while (inGameMortyIndexes.length < mortyIndexes.length) {
+        while (inGameMortyIndexes.length < level) {
             addMorty(inGameMortyIndexes)
         }
         mortyIndexes.splice(0, mortyIndexes.length, ...inGameMortyIndexes)

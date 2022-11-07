@@ -2,6 +2,7 @@ import * as React from "react"
 import BackgroundURL from "@/gfx/background.webp"
 import ForegroundURL from "@/gfx/frame.webp"
 import Logic from "./logic/logic"
+import MetalURL from "@/gfx/frame-texture.jpg"
 import Painter from "./painter"
 import SpritesURL from "@/gfx/sprites.webp"
 import TestURL from "./test.webp"
@@ -31,12 +32,12 @@ async function mountCanvas(canvas: HTMLCanvasElement) {
         gl,
         await loadImage(BackgroundURL),
         await loadImage(SpritesURL),
-        await loadImage(ForegroundURL)
+        await loadImage(ForegroundURL),
+        await loadImage(MetalURL)
     )
     let score = 0
     const logic = new Logic(painter)
-    logic.eventScoreUpdate.add((value) => {
-        score = Math.max(0, score + value)
+    logic.eventScoreUpdate.add((score) => {
         scoreDiv.textContent = `${score}`
     })
     logic.eventMiss.add(() => {

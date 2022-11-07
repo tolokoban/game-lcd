@@ -1,3 +1,5 @@
+import TilesPainter from "./tiles-painter"
+
 export default class Painter {
     static RICK_TOP_LEFT = 0
     static RICK_TOP_RIGHT = 1
@@ -44,13 +46,16 @@ export default class Painter {
         6,
     ]
     private ratioImage = 1
+    private readonly tilePainter: TilesPainter
 
     constructor(
         private readonly gl: WebGL2RenderingContext,
         background: HTMLImageElement,
         sprites: HTMLImageElement,
-        foreground: HTMLImageElement
+        foreground: HTMLImageElement,
+        metal: HTMLImageElement
     ) {
+        this.tilePainter = new TilesPainter(gl, metal)
         this.ratioImage = ensureSameAspectRatio(background, sprites)
         // prettier-ignore
         this.backBuff = this.createDrawBuffer([
@@ -158,8 +163,9 @@ export default class Painter {
         }
         ratioX *= scale
         ratioY *= scale
-        gl.clearColor(0.25, 0.5, 0.447, 1)
-        gl.clear(gl.COLOR_BUFFER_BIT)
+        // gl.clearColor(0.25, 0.5, 0.447, 1)
+        // gl.clear(gl.COLOR_BUFFER_BIT)
+        this.tilePainter.draw()
         gl.disable(gl.DEPTH_TEST)
         gl.useProgram(prg)
         //------------
