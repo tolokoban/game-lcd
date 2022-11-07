@@ -11,6 +11,11 @@ div.game > canvas {
     margin: 0;
 }
 
+div.game > canvas {
+    background-repeat: repeat;
+    background-image: url(@/gfx/frame-texture.jpg);
+}
+
 div.game > div#score {
     color: #000;
     background-color: #fffd;
@@ -25,4 +30,25 @@ div.game > div#score {
     top: 0;
     border-radius: 0 0 1em 1em;
     box-shadow: 0 2px 4px #0009;
+}
+
+div.game > div.button-red {
+    position: absolute;
+    bottom: 1vmax;
+    width: 9vmax;
+    height: 9vmax;
+    content: ".";
+    font-size: 0;
+    background-image: url("@/gfx/button-red.webp");
+    background-repeat: no-repeat;
+    background-size: contain;
+    pointer-events: none;
+}
+
+div.game > div.button-red.left {
+    left: 1vmax;
+}
+
+div.game > div.button-red.right {
+    right: 1vmax;
 }

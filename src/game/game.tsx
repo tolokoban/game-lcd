@@ -1,8 +1,9 @@
 import * as React from "react"
 import BackgroundURL from "@/gfx/background.webp"
-import ForegroundURL from "@/gfx/foreground.webp"
+import ForegroundURL from "@/gfx/frame.webp"
 import Logic from "./logic/logic"
 import Painter from "./painter"
+import SpritesURL from "@/gfx/sprites.webp"
 import TestURL from "./test.webp"
 import "./game.css"
 
@@ -11,6 +12,8 @@ export function Game() {
         <div className="game">
             <canvas ref={mountCanvas}></canvas>
             <div id="score">0</div>
+            <div className="button-red left"></div>
+            <div className="button-red right"></div>
         </div>
     )
 }
@@ -27,6 +30,7 @@ async function mountCanvas(canvas: HTMLCanvasElement) {
     const painter = new Painter(
         gl,
         await loadImage(BackgroundURL),
+        await loadImage(SpritesURL),
         await loadImage(ForegroundURL)
     )
     let score = 0

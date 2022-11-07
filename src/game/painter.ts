@@ -26,6 +26,7 @@ export default class Painter {
 
     private readonly prg: WebGLProgram
     private readonly texBackground: WebGLTexture
+    private readonly texSprites: WebGLTexture
     private readonly texForeground: WebGLTexture
     private readonly backBuff: WebGLBuffer
     private readonly drawBuff: WebGLBuffer
@@ -47,15 +48,16 @@ export default class Painter {
     constructor(
         private readonly gl: WebGL2RenderingContext,
         background: HTMLImageElement,
+        sprites: HTMLImageElement,
         foreground: HTMLImageElement
     ) {
-        this.ratioImage = ensureSameAspectRatio(background, foreground)
+        this.ratioImage = ensureSameAspectRatio(background, sprites)
         // prettier-ignore
         this.backBuff = this.createDrawBuffer([
-            -1, +1,
-            -1, -1,
-            +1, -1,
-            +1, +1
+            0, 1,
+            0, 0,
+            1, 0,
+            1, 1
         ])
         // prettier-ignore
         this.elemBuff = this.createElemBuffer([
@@ -112,6 +114,7 @@ export default class Painter {
             0.08808,0.57557, 0.09682,0.74638, 0.00134,0.75880, 0.00538,0.58282,  // MORTY_BOTTOM_9
         ])
         this.texBackground = this.createTexture(background)
+        this.texSprites = this.createTexture(sprites)
         this.texForeground = this.createTexture(foreground)
         this.prg = createProgram(gl)
         this.vaoBackground = this.createBackgroundVAO()
@@ -133,25 +136,44 @@ export default class Painter {
             canvas.height = h * dpr
             gl.viewport(0, 0, w * dpr, h * dpr)
         }
-        const ratioScreen = w / h
-        const ratio = ratioImage / ratioScreen
         let ratioX = 1
         let ratioY = 1
-        if (ratio > 1) ratioY = 1 / ratio
-        else ratioX = ratio
-        gl.clearColor(0.733, 0.71, 0.655, 1)
+        let scale = 1
+        const MARGIN_WIDE = 0.1
+        const MARGIN_NARROW = 0.005
+        const ratioScreen = w / h
+        const ratio = ratioImage / ratioScreen
+        if (w > h) {
+            if (ratio > 1) ratioY = 1 / ratio
+            else ratioX = ratio
+            const w2 = w * (1 - MARGIN_WIDE)
+            const h2 = h * (1 - MARGIN_NARROW)
+            scale = Math.min(w2 / w, h2 / h)
+        } else {
+            if (ratio > 1) ratioY = 1 / ratio
+            else ratioX = ratio
+            const w2 = w * (1 - MARGIN_NARROW)
+            const h2 = h * (1 - MARGIN_WIDE)
+            scale = Math.min(w2 / w, h2 / h)
+        }
+        ratioX *= scale
+        ratioY *= scale
+        gl.clearColor(0.25, 0.5, 0.447, 1)
         gl.clear(gl.COLOR_BUFFER_BIT)
         gl.disable(gl.DEPTH_TEST)
-        gl.disable(gl.BLEND)
         gl.useProgram(prg)
+        //------------
+        // Background
+        gl.disable(gl.BLEND)
         gl.uniform2f(this.uniAspectRatioContain, ratioX, ratioY)
         gl.activeTexture(gl.TEXTURE0)
         gl.bindTexture(gl.TEXTURE_2D, this.texBackground)
         gl.uniform1i(this.uniTexture, 0)
         gl.bindVertexArray(vaoBackground)
         gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
-
         gl.bindVertexArray(null)
+        //---------
+        // Sprites
         gl.enable(gl.BLEND)
         gl.blendEquation(gl.FUNC_ADD)
         gl.blendFuncSeparate(
@@ -160,10 +182,9 @@ export default class Painter {
             gl.ZERO,
             gl.ONE
         )
-        gl.useProgram(prg)
         gl.uniform2f(this.uniAspectRatioContain, ratioX, ratioY)
         gl.activeTexture(gl.TEXTURE0)
-        gl.bindTexture(gl.TEXTURE_2D, this.texForeground)
+        gl.bindTexture(gl.TEXTURE_2D, this.texSprites)
         gl.uniform1i(this.uniTexture, 0)
         gl.bindVertexArray(vaoForeground)
         for (const index of spriteIndexes) {
@@ -171,6 +192,15 @@ export default class Painter {
             const size = this.sizes[index]
             gl.drawElements(gl.TRIANGLES, size, gl.UNSIGNED_SHORT, offset)
         }
+        gl.bindVertexArray(null)
+        //------------
+        // Foreground
+        gl.uniform2f(this.uniAspectRatioContain, ratioX * 1.1, ratioY * 1.1)
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, this.texForeground)
+        gl.uniform1i(this.uniTexture, 0)
+        gl.bindVertexArray(vaoBackground)
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
         gl.bindVertexArray(null)
     }
 
@@ -260,7 +290,7 @@ function ensureSameAspectRatio(img1: Dimension, img2: Dimension): number {
     const ratio2 = img2.width / img2.height
     if (Math.abs(ratio1 - ratio2) > 1e-3) {
         throw Error(
-            "Background and foregroung must have the same aspect ratio!"
+            "Background and sprites images must have the same aspect ratio!"
         )
     }
     return ratio1

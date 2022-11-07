@@ -1,6 +1,6 @@
 import * as React from "react"
 import EditorView from "../view/editor"
-import ImageURL from "../../gfx/foreground.webp"
+import ImageURL from "../../gfx/sprites.webp"
 import painter from "./painter"
 import PolygonsList from "../view/polygons-list"
 import { generateCode } from "./exporter/exporter"
