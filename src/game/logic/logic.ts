@@ -19,7 +19,7 @@ export default class Logic {
     public readonly eventScoreUpdate = new GenericEvent<number>()
     public readonly eventMiss = new GenericEvent<void>()
 
-    private score = 0
+    private _score = 0
     private lifes = 3
     private rickIndex = 0
     private readonly mortyTopIndexes: number[]
@@ -37,6 +37,47 @@ export default class Logic {
         this.mortyTopIndexes = [-1]
         this.mortyBotIndexes = [rnd(-2, -7)]
         this.sprites.on("rick", this.rickIndex)
+    }
+
+    get score() {
+        return this._score
+    }
+    set score(value: number) {
+        this._score = value
+        this.eventScoreUpdate.fire(value)
+        this.sprites.off("digit8")
+        switch (value % 10) {
+            case 0:
+                this.sprites.on("digit0")
+                break
+            case 1:
+                this.sprites.on("digit1")
+                break
+            case 2:
+                this.sprites.on("digit2")
+                break
+            case 3:
+                this.sprites.on("digit3")
+                break
+            case 4:
+                this.sprites.on("digit4")
+                break
+            case 5:
+                this.sprites.on("digit5")
+                break
+            case 6:
+                this.sprites.on("digit6")
+                break
+            case 7:
+                this.sprites.on("digit7")
+                break
+            case 8:
+                this.sprites.on("digit8")
+                break
+            case 9:
+                this.sprites.on("digit9")
+                break
+        }
     }
 
     play(time: number) {
@@ -103,7 +144,6 @@ export default class Logic {
 
     private addToScore(value: number) {
         this.score += value
-        this.eventScoreUpdate.fire(this.score)
     }
 
     private playMortyTop(time: number) {
@@ -256,7 +296,6 @@ export default class Logic {
             if (this.lifes < 1) {
                 this.lifes = 3
                 this.score = 0
-                this.eventScoreUpdate.fire(this.score)
             }
             this.resetMorties()
         })
