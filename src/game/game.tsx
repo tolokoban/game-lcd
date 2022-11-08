@@ -12,7 +12,6 @@ export function Game() {
     return (
         <div className="game">
             <canvas ref={mountCanvas}></canvas>
-            <div id="score">0</div>
             <div className="button-red left"></div>
             <div className="button-red right"></div>
         </div>
@@ -20,9 +19,6 @@ export function Game() {
 }
 
 async function mountCanvas(canvas: HTMLCanvasElement) {
-    const scoreDiv = document.getElementById("score")
-    if (!scoreDiv) throw Error("Missing div with id score!")
-
     const gl = canvas.getContext("webgl2", {
         antialias: false,
     })
@@ -37,13 +33,6 @@ async function mountCanvas(canvas: HTMLCanvasElement) {
     )
     let score = 0
     const logic = new Logic(painter)
-    logic.eventScoreUpdate.add((score) => {
-        scoreDiv.textContent = `${score}`
-    })
-    logic.eventMiss.add(() => {
-        score = Math.max(0, score - 5)
-        scoreDiv.textContent = `${score}`
-    })
     const draw = (time: number) => {
         logic.play(time)
         painter.draw(logic.sprites.list())

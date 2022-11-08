@@ -2,11 +2,9 @@ import BasePainter from "../base-painter"
 import GenericEvent from "../../editor/tool/generic-event"
 import Painter from "../painter"
 import { attachUserInputHandler, UserInputHandler } from "./user-input"
-import { getHeapStatistics } from "v8"
 import { makeSprites } from "./make-sprites"
 
 const MORTY_PATH_LENGTH = 10
-const RICK_PATH_LENGTH = 4
 const MORTY_STEP_DURATION = 1000
 // Used to quiclky divide the time to get the current Morty's tick.
 const MORTY_TICK = 1 / MORTY_STEP_DURATION
@@ -37,6 +35,7 @@ export default class Logic {
         this.mortyTopIndexes = [-1]
         this.mortyBotIndexes = [rnd(-2, -7)]
         this.sprites.on("rick", this.rickIndex)
+        this.score = 0
     }
 
     get score() {
@@ -46,38 +45,13 @@ export default class Logic {
         this._score = value
         this.eventScoreUpdate.fire(value)
         this.sprites.off("digit8")
-        switch (value % 10) {
-            case 0:
-                this.sprites.on("digit0")
-                break
-            case 1:
-                this.sprites.on("digit1")
-                break
-            case 2:
-                this.sprites.on("digit2")
-                break
-            case 3:
-                this.sprites.on("digit3")
-                break
-            case 4:
-                this.sprites.on("digit4")
-                break
-            case 5:
-                this.sprites.on("digit5")
-                break
-            case 6:
-                this.sprites.on("digit6")
-                break
-            case 7:
-                this.sprites.on("digit7")
-                break
-            case 8:
-                this.sprites.on("digit8")
-                break
-            case 9:
-                this.sprites.on("digit9")
-                break
-        }
+        this.sprites.on(`digit${value % 10}`)
+        value = Math.floor(value / 10)
+        this.sprites.off("digit80")
+        this.sprites.on(`digit${value % 10}0`)
+        value = Math.floor(value / 10)
+        this.sprites.off("digit800")
+        this.sprites.on(`digit${value % 10}00`)
     }
 
     play(time: number) {

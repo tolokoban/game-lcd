@@ -38,7 +38,7 @@ export default class Sprites<T extends PathsDefinition> {
         return Array.from(this.sprites)
     }
 
-    on(name: keyof T, ...steps: number[]) {
+    on(name: string, ...steps: number[]) {
         const { paths, sprites } = this
         const path = paths[name]
         if (steps.length === 0) steps = path.map((_item, index) => index)
@@ -51,7 +51,7 @@ export default class Sprites<T extends PathsDefinition> {
         }
     }
 
-    off(name: keyof T, ...steps: number[]) {
+    off(name: string, ...steps: number[]) {
         const { paths, sprites } = this
         const path = paths[name]
         if (steps.length === 0) steps = path.map((_item, index) => index)
