@@ -69,3 +69,17 @@ button:active {
     box-shadow: 0 0.125em 0.25em #000a;
     transform: translateY(0.125em);
 }
+
+#splash {
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+#splash.vanish {
+    opacity: 0;
+}
+
+#start-button.reveal {
+    opacity: 1;
+    transform: scale(1);
+}
