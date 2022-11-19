@@ -82,8 +82,6 @@ export default class Painter extends BasePainter {
         }
         ratioX *= scale
         ratioY *= scale
-        // gl.clearColor(0.25, 0.5, 0.447, 1)
-        // gl.clear(gl.COLOR_BUFFER_BIT)
         this.tilePainter.draw()
         gl.disable(gl.DEPTH_TEST)
         gl.useProgram(prg)

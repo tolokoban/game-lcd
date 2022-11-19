@@ -4,6 +4,7 @@ import Painter from "../painter"
 import { attachUserInputHandler, UserInputHandler } from "./user-input"
 import { makeSprites } from "./make-sprites"
 import { WAVES } from "./waves"
+import { setHiScore } from "../hi-score"
 
 const MORTY_PATH_LENGTH = 10
 const MORTY_STEP_DURATION = 1000
@@ -62,7 +63,7 @@ export default class Logic {
             this.playMortyBot(time)
             if (
                 this.mortyTopIndexes.length === 0 &&
-                this.mortyTopIndexes.length === 0
+                this.mortyBotIndexes.length === 0
             ) {
                 this.resetMorties()
             }
@@ -122,12 +123,12 @@ export default class Logic {
             this.moveMorty(this.mortyTopIndexes, (mortyStep: number) => {
                 if (mortyStep === 3) {
                     if (this.sprites.isOff("rickTopLeft")) {
-                        this.createCinematic("mortyTop", mortyStep)
+                        this.createCinematicForLifeLost("mortyTop", mortyStep)
                         return true
                     }
                 } else if (mortyStep === 6) {
                     if (this.sprites.isOff("rickTopRight")) {
-                        this.createCinematic("mortyTop", mortyStep)
+                        this.createCinematicForLifeLost("mortyTop", mortyStep)
                         return true
                     }
                 }
@@ -145,12 +146,12 @@ export default class Logic {
             this.moveMorty(this.mortyBotIndexes, (mortyStep: number) => {
                 if (mortyStep === 3) {
                     if (this.sprites.isOff("rickBotRight")) {
-                        this.createCinematic("mortyBot", mortyStep)
+                        this.createCinematicForLifeLost("mortyBot", mortyStep)
                         return true
                     }
                 } else if (mortyStep === 6) {
                     if (this.sprites.isOff("rickBotLeft")) {
-                        this.createCinematic("mortyBot", mortyStep)
+                        this.createCinematicForLifeLost("mortyBot", mortyStep)
                         return true
                     }
                 }
@@ -179,8 +180,11 @@ export default class Logic {
         const inGameMortyIndexes = mortyIndexes.filter(
             (idx) => idx < MORTY_PATH_LENGTH
         )
-        this.addToScore(mortyIndexes.length - inGameMortyIndexes.length)
-        resetArray(mortyIndexes, inGameMortyIndexes)
+        const score = mortyIndexes.length - inGameMortyIndexes.length
+        if (score > 0) {
+            this.addToScore(score)
+            resetArray(mortyIndexes, inGameMortyIndexes)
+        }
     }
 
     private readonly inputHandler: UserInputHandler = (action) => {
@@ -236,7 +240,10 @@ export default class Logic {
         this.sprites.on("rick", this.rickIndex)
     }
 
-    private createCinematic(name: "mortyTop" | "mortyBot", step: number) {
+    private createCinematicForLifeLost(
+        name: "mortyTop" | "mortyBot",
+        step: number
+    ) {
         this.resetCinematic()
         this.addToCinematic(0, () => this.sprites.on(name, step))
         for (let loop = 0; loop < 4; loop++) {
@@ -251,12 +258,34 @@ export default class Logic {
         }
         this.addToCinematic(300, () => {
             this.sprites.off(name, step)
+            this.resetMorties()
             this.lifes--
             if (this.lifes < 1) {
-                this.lifes = 3
-                this.score = 0
+                this.createCinematicForGameOver()
             }
-            this.resetMorties()
+        })
+    }
+
+    private createCinematicForGameOver() {
+        this.resetCinematic()
+        for (let loop = 0; loop < 7; loop++) {
+            this.addToCinematic(100, () => {
+                this.sprites.on("gameOver")
+            })
+            this.addToCinematic(100, () => {
+                this.sprites.off("gameOver")
+            })
+        }
+        this.addToCinematic(100, () => {
+            this.sprites.on("gameOver")
+        })
+        this.addToCinematic(3000, () => {
+            this.sprites.on("gameOver")
+            setHiScore(this.score)
+            this.addToCinematic(300, () => {
+                this.sprites.off("gameOver")
+                document.location.reload()
+            })
         })
     }
 
@@ -278,10 +307,10 @@ export default class Logic {
      * Remove all the visible Morties and put them at the end of the tail.
      */
     private resetMorties() {
-        const MAX_SCORE = 500
+        const MAX_SCORE = 300
         const RADIUS = 10
         const maxIndex = WAVES.length - RADIUS
-        const score = Math.min(MAX_SCORE, this.score / (4 - this.lifes))
+        const score = Math.min(MAX_SCORE, this.score)
         const index = Math.floor(
             Math.random() * RADIUS + (maxIndex * score) / MAX_SCORE
         )

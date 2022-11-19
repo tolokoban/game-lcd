@@ -8,6 +8,7 @@ import { createRoot } from "react-dom/client"
 import { Game } from "./game/game"
 import "./index.css"
 import Wave from "./wave"
+import { getHiScore } from "./game/hi-score"
 
 async function start() {
     const container = document.getElementById("app")
@@ -31,16 +32,10 @@ async function start() {
     const foregroundImage = await loadImage(ForegroundURL)
     const metalImage = await loadImage(MetalURL)
 
-    const startButton = document.getElementById("start-button")
-    if (!startButton) throw Error('No element with id "start-button"!')
-
-    startButton.classList.add("reveal")
-    const progress = document.getElementById("loading-in-progress")
-    if (progress) progress.style.display = "none"
-
-    const splash = document.getElementById("splash")
-    if (!splash) throw Error('Missing div with id "splash"!')
-
+    get("hi-score").textContent = `Hi Score: ${getHiScore()}`
+    get("start-button").classList.add("reveal")
+    get("loading-in-progress").style.display = "none"
+    const splash = get("splash")
     const handleStart = async () => {
         const result = await document.body.requestFullscreen()
         window.setTimeout(() => {
@@ -55,7 +50,7 @@ async function start() {
                     onReady={removeSplash}
                 />
             )
-        }, 500)
+        }, 300)
     }
     splash.addEventListener("click", handleStart, true)
 }
@@ -71,6 +66,12 @@ function removeSplash() {
 }
 
 void start()
+
+function get(id: string): HTMLElement | SVGElement {
+    const elem = document.getElementById(id)
+    if (!elem) throw Error(`There is no element with id "${id}"!`)
+    return elem
+}
 
 async function loadImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve) => {

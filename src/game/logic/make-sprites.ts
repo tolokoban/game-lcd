@@ -3,6 +3,7 @@ import Sprites from "../sprites"
 
 export function makeSprites() {
     return new Sprites({
+        gameOver: [Painter.GAME_OVER],
         rickTopLeft: [Painter.RICK_TOP_LEFT],
         rickTopRight: [Painter.RICK_TOP_RIGHT],
         rickBotLeft: [Painter.RICK_BOTTOM_LEFT],

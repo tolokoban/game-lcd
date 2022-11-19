@@ -83,3 +83,21 @@ button:active {
     opacity: 1;
     transform: scale(1);
 }
+
+#hi-score {
+    font-family: sans-serif;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    font-size: 5vw;
+    line-height: 2em;
+    padding: 0 0.5em;
+    background-color: #0007;
+    color: #fff;
+    text-align: center;
+    width: 10em;
+    margin: 0 -5em;
+    border-radius: 1em 1em 0 0;
+    pointer-events: none;
+    box-sizing: border-box;
+}
