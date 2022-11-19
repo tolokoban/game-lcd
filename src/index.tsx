@@ -7,6 +7,7 @@ import SpritesURL from "@/gfx/sprites.webp"
 import { createRoot } from "react-dom/client"
 import { Game } from "./game/game"
 import "./index.css"
+import Wave from "./wave"
 
 async function start() {
     const container = document.getElementById("app")
@@ -19,37 +20,44 @@ async function start() {
         return
     }
 
+    if (window.location.hash === "#wave") {
+        root.render(<Wave />)
+        removeSplash()
+        return
+    }
+
     const backgroundImage = await loadImage(BackgroundURL)
     const spritesImage = await loadImage(SpritesURL)
     const foregroundImage = await loadImage(ForegroundURL)
     const metalImage = await loadImage(MetalURL)
-    root.render(
-        <Game
-            images={{
-                backgroundImage,
-                spritesImage,
-                foregroundImage,
-                metalImage,
-            }}
-        />
-    )
+
     const startButton = document.getElementById("start-button")
     if (!startButton) throw Error('No element with id "start-button"!')
 
     startButton.classList.add("reveal")
+    const progress = document.getElementById("loading-in-progress")
+    if (progress) progress.style.display = "none"
 
     const splash = document.getElementById("splash")
     if (!splash) throw Error('Missing div with id "splash"!')
 
-    splash.addEventListener(
-        "click",
-        async () => {
-            const result = await document.body.requestFullscreen()
-            console.log("🚀 [index] result = ", result) // @FIXME: Remove this line written on 2022-11-09 at 22:03
-            removeSplash()
-        },
-        true
-    )
+    const handleStart = async () => {
+        const result = await document.body.requestFullscreen()
+        window.setTimeout(() => {
+            root.render(
+                <Game
+                    images={{
+                        backgroundImage,
+                        spritesImage,
+                        foregroundImage,
+                        metalImage,
+                    }}
+                    onReady={removeSplash}
+                />
+            )
+        }, 500)
+    }
+    splash.addEventListener("click", handleStart, true)
 }
 
 function removeSplash() {

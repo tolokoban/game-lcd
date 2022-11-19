@@ -11,6 +11,10 @@
         <link rel="manifest" href="manifest.json" />
         <title>Game &amp; Rick</title>
         <style>
+            html,
+            * {
+                touch-action: none;
+            }
             #splash {
                 background-color: #543;
                 position: absolute;
@@ -50,10 +54,34 @@
                 border-radius: 50%;
                 background-color: #f42;
                 color: #fee;
-                margin: 3em;
                 text-align: center;
                 outline-offset: 0.25em;
                 outline: 0.125em solid #f42;
+            }
+            @keyframes progress-anim-1 {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            #loading-in-progress {
+                animation: 4s linear 0s infinite progress-anim-1;
+            }
+            #wait-and-click {
+                position: relative;
+                min-width: 50vmin;
+                min-height: 50vmin;
+            }
+            #wait-and-click > * {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
             }
         </style>
     </head>
@@ -161,7 +189,37 @@
                     </g>
                 </g>
             </svg>
-            <div id="start-button"><div>START</div></div>
+            <div id="wait-and-click">
+                <div style="display: grid; place-items: center">
+                    <svg
+                        id="loading-in-progress"
+                        viewBox="-3 -3 30 30"
+                        style="width: 40vmin; height: 40vmin"
+                    >
+                        <g stroke-dasharray="1 4" stroke-linecap="round">
+                            <circle
+                                fill="none"
+                                stroke-width="2"
+                                stroke="#000"
+                                cx="12"
+                                cy="12"
+                                r="8"
+                            />
+                            <circle
+                                fill="none"
+                                stroke-width="1"
+                                stroke="#b0d9ef"
+                                cx="12"
+                                cy="12"
+                                r="8"
+                            />
+                        </g>
+                    </svg>
+                </div>
+                <div style="display: grid; place-items: center">
+                    <div id="start-button"><div>START</div></div>
+                </div>
+            </div>
         </div>
     </body>
 </html>

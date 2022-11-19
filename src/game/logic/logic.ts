@@ -3,6 +3,7 @@ import GenericEvent from "../../editor/tool/generic-event"
 import Painter from "../painter"
 import { attachUserInputHandler, UserInputHandler } from "./user-input"
 import { makeSprites } from "./make-sprites"
+import { WAVES } from "./waves"
 
 const MORTY_PATH_LENGTH = 10
 const MORTY_STEP_DURATION = 1000
@@ -20,8 +21,8 @@ export default class Logic {
     private _score = 0
     private lifes = 3
     private rickIndex = 0
-    private readonly mortyTopIndexes: number[]
-    private readonly mortyBotIndexes: number[]
+    private readonly mortyTopIndexes: number[] = []
+    private readonly mortyBotIndexes: number[] = []
     private lastTopTick = -1
     private lastBotTick = -1
     private time = 0
@@ -31,11 +32,9 @@ export default class Logic {
 
     constructor(private readonly painter: Painter) {
         attachUserInputHandler(this.inputHandler)
-        const top1 = -1
-        this.mortyTopIndexes = [-1]
-        this.mortyBotIndexes = [rnd(-2, -7)]
         this.sprites.on("rick", this.rickIndex)
         this.score = 0
+        this.resetMorties()
     }
 
     get score() {
@@ -61,6 +60,12 @@ export default class Logic {
         if (mode === "play") {
             this.playMortyTop(time)
             this.playMortyBot(time)
+            if (
+                this.mortyTopIndexes.length === 0 &&
+                this.mortyTopIndexes.length === 0
+            ) {
+                this.resetMorties()
+            }
             return
         }
 
@@ -93,17 +98,6 @@ export default class Logic {
         if (lifes > 2) this.sprites.on("life3")
     }
 
-    /**
-     * @returns The number of simulataneous Morties per line.
-     * This depends on the current score.
-     */
-    private getLevel() {
-        const { score } = this
-        if (score < 10) return 1
-        if (score < 30) return 2
-        return 3
-    }
-
     private onMorty(name: "mortyTop" | "mortyBot") {
         this.sprites.clear(name)
         const indexes =
@@ -131,13 +125,11 @@ export default class Logic {
                         this.createCinematic("mortyTop", mortyStep)
                         return true
                     }
-                    this.addToScore(1)
                 } else if (mortyStep === 6) {
                     if (this.sprites.isOff("rickTopRight")) {
                         this.createCinematic("mortyTop", mortyStep)
                         return true
                     }
-                    this.addToScore(1)
                 }
                 return false
             })
@@ -156,13 +148,11 @@ export default class Logic {
                         this.createCinematic("mortyBot", mortyStep)
                         return true
                     }
-                    this.addToScore(1)
                 } else if (mortyStep === 6) {
                     if (this.sprites.isOff("rickBotLeft")) {
                         this.createCinematic("mortyBot", mortyStep)
                         return true
                     }
-                    this.addToScore(1)
                 }
                 return false
             })
@@ -189,13 +179,8 @@ export default class Logic {
         const inGameMortyIndexes = mortyIndexes.filter(
             (idx) => idx < MORTY_PATH_LENGTH
         )
-        const level = this.getLevel()
-        if (inGameMortyIndexes.length === level) return
-
-        while (inGameMortyIndexes.length < level) {
-            addMorty(inGameMortyIndexes)
-        }
-        mortyIndexes.splice(0, mortyIndexes.length, ...inGameMortyIndexes)
+        this.addToScore(mortyIndexes.length - inGameMortyIndexes.length)
+        resetArray(mortyIndexes, inGameMortyIndexes)
     }
 
     private readonly inputHandler: UserInputHandler = (action) => {
@@ -293,35 +278,21 @@ export default class Logic {
      * Remove all the visible Morties and put them at the end of the tail.
      */
     private resetMorties() {
-        this.resetMortyIndexes(this.mortyTopIndexes)
-        this.resetMortyIndexes(this.mortyBotIndexes)
-    }
-
-    private resetMortyIndexes(mortyIndexes: number[]) {
-        mortyIndexes.splice(0, mortyIndexes.length)
-        for (let loop = 0; loop < 3; loop++) {
-            addMorty(mortyIndexes)
-        }
-    }
-}
-
-function addMorty(mortyIndexes: number[]) {
-    const lastMorty = Math.min(
-        0,
-        mortyIndexes.reduce(
-            (acc, val) => Math.min(acc, val),
-            Number.MAX_SAFE_INTEGER
+        const MAX_SCORE = 500
+        const RADIUS = 10
+        const maxIndex = WAVES.length - RADIUS
+        const score = Math.min(MAX_SCORE, this.score / (4 - this.lifes))
+        const index = Math.floor(
+            Math.random() * RADIUS + (maxIndex * score) / MAX_SCORE
         )
-    )
-    for (;;) {
-        const pos = lastMorty - rnd(1, MORTY_PATH_LENGTH)
-        if (mortyIndexes.includes(pos + 3)) continue
-
-        mortyIndexes.push(pos)
-        return
+        const [top, bot] = WAVES[index]
+        this.mortyTopIndexes.splice(0)
+        resetArray(this.mortyTopIndexes, top)
+        resetArray(this.mortyBotIndexes, bot)
+        console.log("Wave #", index)
     }
 }
 
-function rnd(a: number, b: number): number {
-    return a + Math.floor(Math.random() * (b - a))
+function resetArray(arr: number[], values: number[]) {
+    arr.splice(0, arr.length, ...values)
 }

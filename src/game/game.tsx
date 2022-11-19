@@ -13,14 +13,18 @@ interface GameImages {
 
 export interface GameProps {
     images: GameImages
+    onReady(): void
 }
 
 export function Game(props: GameProps) {
     return (
-        <div className="game">
+        <div className="game" id="GAME">
             <canvas
                 ref={(canvas) => {
-                    if (canvas) mountCanvas(canvas, props.images)
+                    if (canvas) {
+                        mountCanvas(canvas, props.images)
+                        props.onReady()
+                    }
                 }}
             ></canvas>
             <div className="button-red left"></div>

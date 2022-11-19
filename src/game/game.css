@@ -11,6 +11,15 @@ div.game > canvas {
     margin: 0;
 }
 
+@media (orientation: portrait) {
+    div.game {
+        transform: rotate(90deg) translateX(-100vw);
+        height: 100vw;
+        width: 100vh;
+        transform-origin: bottom left;
+    }
+}
+
 div.game > canvas {
     background-repeat: repeat;
     background-image: url(@/gfx/frame-texture.jpg);
@@ -43,12 +52,21 @@ div.game > div.button-red {
     background-repeat: no-repeat;
     background-size: contain;
     pointer-events: none;
+    transition: filter 0.2s;
 }
 
 div.game > div.button-red.left {
     left: 1vmax;
 }
 
+body.button-left div.game > div.button-red.left {
+    filter: saturate(130%) brightness(130%);
+}
+
 div.game > div.button-red.right {
     right: 1vmax;
+}
+
+body.button-right div.game > div.button-red.right {
+    filter: saturate(130%) brightness(130%);
 }
