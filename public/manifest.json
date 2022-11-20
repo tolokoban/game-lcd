@@ -1,7 +1,7 @@
 {
-    "short_name": "TGD",
-    "name": "Tolo-Game-Dev",
-    "description": "Game dev studio for WebGL2 and WASM",
+    "short_name": "GnR",
+    "name": "Game & Rick",
+    "description": "Double tribute: to Game & watch, and to Rick and Morty",
     "icons": [
         {
             "src": "favicon.ico",

@@ -299,7 +299,10 @@ export default class Logic {
             this.cinematic.push([delay + this.time, action])
             return
         }
-        const [time] = this.cinematic.at(-1) as [number, () => void]
+        const [time] = this.cinematic[this.cinematic.length - 1] as [
+            number,
+            () => void
+        ]
         this.cinematic.push([time + delay, action])
     }
 

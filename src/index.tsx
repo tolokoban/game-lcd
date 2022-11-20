@@ -10,6 +10,19 @@ import "./index.css"
 import Wave from "./wave"
 import { getHiScore } from "./game/hi-score"
 
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker
+            .register("/service-worker.js")
+            .then((registration) => {
+                console.log("SW registered: ", registration)
+            })
+            .catch((registrationError) => {
+                console.log("SW registration failed: ", registrationError)
+            })
+    })
+}
+
 async function start() {
     const container = document.getElementById("app")
     if (!container) throw Error(`No element with id "app"!`)
@@ -37,7 +50,9 @@ async function start() {
     get("loading-in-progress").style.display = "none"
     const splash = get("splash")
     const handleStart = async () => {
-        const result = await document.body.requestFullscreen()
+        if (typeof document.body.requestFullscreen === "function") {
+            await document.body.requestFullscreen()
+        }
         window.setTimeout(() => {
             root.render(
                 <Game

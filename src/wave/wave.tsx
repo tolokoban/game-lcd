@@ -9,7 +9,7 @@ interface Wave {
 export default function Wave() {
     const [waves, setWaves] = React.useState<Wave[]>([])
     React.useEffect(() => {
-        if (waves.length > 2000) return
+        if (waves.length > 3000) return
 
         const wave = createRandomWave()
         if (wave.score < 0) {
@@ -79,19 +79,21 @@ function dice(a: number): number {
 }
 
 function computeScore(wave: Wave) {
+    if (hasSimultaneousFalls(wave.top) || hasSimultaneousFalls(wave.top)) {
+        wave.score = -1
+        return
+    }
     let top = [...wave.top]
     let bot = [...wave.bot]
     const falls: number[] = []
     const ricks: number[] = []
     for (let time = 0; time < 10000; time++) {
         let stop = true
-        let count = 0
         if ((time & 1) === 0) {
             top = top.map((v) => v + 1)
             for (const val of top) {
                 if (val < 10) stop = false
                 if (val === 3 || val === 6) {
-                    count++
                     falls.push(time)
                     ricks.push(val === 3 ? 0 : 1)
                 }
@@ -101,16 +103,10 @@ function computeScore(wave: Wave) {
             for (const val of bot) {
                 if (val < 10) stop = false
                 if (val === 3 || val === 6) {
-                    count++
                     falls.push(time)
                     ricks.push(val === 3 ? 2 : 3)
                 }
             }
-        }
-        if (count > 1) {
-            // Double fall is impossible to catch.
-            wave.score = -1
-            return
         }
         if (stop) break
     }
@@ -121,4 +117,14 @@ function computeScore(wave: Wave) {
         const score = (deltaRick * 1000) / (deltaTime * deltaTime)
         wave.score += score
     }
+}
+
+function hasSimultaneousFalls(steps: number[]): boolean {
+    const sortedArray = [...steps].sort()
+    for (let i = 1; i < sortedArray.length; i++) {
+        const a = sortedArray[i - 1]
+        const b = sortedArray[i]
+        if (b - a === 3) return true
+    }
+    return false
 }
