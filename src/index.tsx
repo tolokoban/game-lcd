@@ -49,8 +49,11 @@ async function start() {
     get("start-button").classList.add("reveal")
     get("loading-in-progress").style.display = "none"
     const splash = get("splash")
-    const handleStart = async () => {
-        if (typeof document.body.requestFullscreen === "function") {
+    const handleStart = async (fullscreen: boolean = false) => {
+        if (
+            fullscreen &&
+            typeof document.body.requestFullscreen === "function"
+        ) {
             await document.body.requestFullscreen()
         }
         window.setTimeout(() => {
@@ -67,7 +70,12 @@ async function start() {
             )
         }, 300)
     }
-    splash.addEventListener("click", handleStart, true)
+    splash.addEventListener("click", () => handleStart(true), true)
+    const handleKeyEvent = () => {
+        handleStart(false)
+        document.removeEventListener("keydown", handleKeyEvent)
+    }
+    document.addEventListener("keydown", handleKeyEvent)
 }
 
 function removeSplash() {
@@ -80,7 +88,7 @@ function removeSplash() {
     }, 300)
 }
 
-void start()
+document.addEventListener("DOMContentLoaded", () => void start())
 
 function get(id: string): HTMLElement | SVGElement {
     const elem = document.getElementById(id)
